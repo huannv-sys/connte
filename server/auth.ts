@@ -30,7 +30,7 @@ async function comparePasswords(supplied: string, stored: string) {
 
 export function setupAuth(app: Express) {
   const sessionSettings: session.SessionOptions = {
-    secret: process.env.SESSION_SECRET!,
+    secret: process.env.SESSION_SECRET || "dev-secret-key",
     resave: false,
     saveUninitialized: false,
     cookie: {
@@ -70,14 +70,18 @@ export function setupAuth(app: Express) {
 
   // Create default admin account if it doesn't exist
   (async () => {
-    const admin = await storage.getUserByUsername("admin");
-    if (!admin) {
-      await storage.createUser({
-        username: "admin",
-        password: await hashPassword("admin123"),
-        email: "admin@example.com",
-        isAdmin: true,
-      });
+    try {
+      const admin = await storage.getUserByUsername("admin");
+      if (!admin) {
+        await storage.createUser({
+          username: "admin",
+          password: await hashPassword("admin123"),
+          email: "admin@example.com",
+          isAdmin: true,
+        });
+      }
+    } catch (error) {
+      console.error("Failed to create admin account:", error);
     }
   })();
 
@@ -90,7 +94,7 @@ export function setupAuth(app: Express) {
 
       const existingUser = await storage.getUserByUsername(req.body.username);
       if (existingUser) {
-        return res.status(400).send("Tên đăng nhập đã tồn tại");
+        return res.status(400).json({ error: "Tên đăng nhập đã tồn tại" });
       }
 
       const user = await storage.createUser({
@@ -124,7 +128,7 @@ export function setupAuth(app: Express) {
   // Admin routes
   app.put("/api/users/:id", async (req, res) => {
     if (!req.isAuthenticated() || !req.user.isAdmin) {
-      return res.status(403).json({ error: "Unauthorized" });
+      return res.status(403).json({ error: "Không có quyền thực hiện" });
     }
 
     const { password, ...updates } = req.body;
@@ -132,7 +136,7 @@ export function setupAuth(app: Express) {
     const user = await storage.getUser(userId);
 
     if (!user) {
-      return res.status(404).json({ error: "User not found" });
+      return res.status(404).json({ error: "Không tìm thấy người dùng" });
     }
 
     // Update password if provided
@@ -146,7 +150,7 @@ export function setupAuth(app: Express) {
 
   app.get("/api/users", async (req, res) => {
     if (!req.isAuthenticated() || !req.user.isAdmin) {
-      return res.status(403).json({ error: "Unauthorized" });
+      return res.status(403).json({ error: "Không có quyền thực hiện" });
     }
 
     const users = await storage.getUsers();

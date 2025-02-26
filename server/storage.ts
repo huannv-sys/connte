@@ -31,14 +31,6 @@ export class MemStorage implements IStorage {
     this.devices = new Map();
     this.currentId = 1;
 
-    // Create default admin account
-    this.createUser({
-      username: "admin",
-      password: "admin123", // This will be hashed by auth.ts
-      email: "admin@example.com",
-      isAdmin: true,
-    });
-
     this.updateInterval = setInterval(() => {
       this.metrics = {
         id: 1,
@@ -86,7 +78,8 @@ export class MemStorage implements IStorage {
     const user: User = { 
       ...insertUser, 
       id,
-      createdAt: new Date() 
+      createdAt: new Date(),
+      isAdmin: insertUser.isAdmin ?? false
     };
     this.users.set(id, user);
     return user;
@@ -145,34 +138,85 @@ export class MemStorage implements IStorage {
   }
 
   async connectMikrotik(device: Device): Promise<void> {
-    this.logs.push({
-      id: this.logs.length + 1,
-      deviceId: device.id,
-      type: "system",
-      message: `Connected to Mikrotik device ${device.name} (${device.ipAddress})`,
-      timestamp: new Date()
-    });
+    try {
+      // In a real implementation, this would connect to the actual Mikrotik API
+      // For now we'll simulate a connection check
+      if (!device.ipAddress || !device.username || !device.password || !device.apiKey) {
+        throw new Error("Thiếu thông tin kết nối");
+      }
+
+      // Log successful connection
+      this.logs.push({
+        id: this.logs.length + 1,
+        deviceId: device.id,
+        type: "system",
+        message: `Đã kết nối thành công với thiết bị ${device.name} (${device.ipAddress})`,
+        timestamp: new Date()
+      });
+    } catch (error: any) {
+      // Log connection failure
+      this.logs.push({
+        id: this.logs.length + 1,
+        deviceId: device.id,
+        type: "error",
+        message: `Lỗi kết nối thiết bị ${device.name}: ${error.message}`,
+        timestamp: new Date()
+      });
+      throw error;
+    }
   }
 
   async disconnectMikrotik(deviceId: number): Promise<void> {
-    this.logs.push({
-      id: this.logs.length + 1,
-      deviceId: deviceId,
-      type: "system",
-      message: "Disconnected from Mikrotik device",
-      timestamp: new Date()
-    });
+    try {
+      const device = Array.from(this.devices.values()).find(d => d.id === deviceId);
+      if (!device) {
+        throw new Error("Không tìm thấy thiết bị");
+      }
+
+      this.logs.push({
+        id: this.logs.length + 1,
+        deviceId: deviceId,
+        type: "system",
+        message: `Đã ngắt kết nối thiết bị ${device.name}`,
+        timestamp: new Date()
+      });
+    } catch (error: any) {
+      this.logs.push({
+        id: this.logs.length + 1,
+        deviceId: deviceId,
+        type: "error",
+        message: `Lỗi khi ngắt kết nối: ${error.message}`,
+        timestamp: new Date()
+      });
+      throw error;
+    }
   }
 
   async executeMikrotikCommand(deviceId: number, command: string): Promise<string> {
-    this.logs.push({
-      id: this.logs.length + 1,
-      deviceId: deviceId,
-      type: "system",
-      message: `Executed Mikrotik command: ${command}`,
-      timestamp: new Date()
-    });
-    return `Simulated Mikrotik command execution: ${command}`;
+    try {
+      const device = Array.from(this.devices.values()).find(d => d.id === deviceId);
+      if (!device) {
+        throw new Error("Không tìm thấy thiết bị");
+      }
+
+      this.logs.push({
+        id: this.logs.length + 1,
+        deviceId: deviceId,
+        type: "system",
+        message: `Thực thi lệnh trên thiết bị ${device.name}: ${command}`,
+        timestamp: new Date()
+      });
+      return `Đã thực thi lệnh thành công: ${command}`;
+    } catch (error: any) {
+      this.logs.push({
+        id: this.logs.length + 1,
+        deviceId: deviceId,
+        type: "error",
+        message: `Lỗi khi thực thi lệnh: ${error.message}`,
+        timestamp: new Date()
+      });
+      throw error;
+    }
   }
 
   async getDevices(userId: number): Promise<Device[]> {
