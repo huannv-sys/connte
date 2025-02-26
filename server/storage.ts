@@ -240,6 +240,48 @@ export class MemStorage implements IStorage {
     const id = this.currentId++;
     const newDevice: Device = { ...device, id };
     this.devices.set(id, newDevice);
+
+    // Initialize metrics for the new device
+    this.metrics.set(id, {
+      id: this.metrics.size + 1,
+      deviceId: id,
+      timestamp: new Date(),
+      cpuLoad: 0,
+      memoryUsed: 0,
+      interfaces: {
+        ether1: "unknown",
+        "vlan100": "unknown",
+        "bridge1": "unknown"
+      },
+      vpnStatus: {
+        "vpn0": "disconnected",
+        "l2tp-out1": "disconnected"
+      },
+      wifiClients: []
+    });
+
+    try {
+      // Try to connect to the device right after creation
+      await this.connectMikrotik(newDevice);
+
+      this.logs.push({
+        id: this.logs.length + 1,
+        deviceId: id,
+        type: "system",
+        message: `Thiết bị mới "${newDevice.name}" đã được thêm và kết nối thành công`,
+        timestamp: new Date()
+      });
+    } catch (error: any) {
+      this.logs.push({
+        id: this.logs.length + 1,
+        deviceId: id,
+        type: "error",
+        message: `Lỗi kết nối thiết bị mới "${newDevice.name}": ${error.message}`,
+        timestamp: new Date()
+      });
+      throw new Error(`Không thể kết nối thiết bị: ${error.message}`);
+    }
+
     return newDevice;
   }
 }

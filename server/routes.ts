@@ -73,11 +73,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId: req.user.id
       });
 
-      // Attempt to connect to the device after creating it
-      await storage.connectMikrotik(device);
-      res.json(device);
+      // Device is already connected by createDevice
+      res.json({
+        success: true,
+        device,
+        message: `Thiết bị ${device.name} đã được thêm và kết nối thành công`
+      });
     } catch (error: any) {
-      res.status(400).json({ error: error.message || "Lỗi khi thêm thiết bị" });
+      // Return detailed error message
+      res.status(400).json({ 
+        error: error.message || "Lỗi khi thêm thiết bị",
+        details: error.details || null
+      });
     }
   });
 
