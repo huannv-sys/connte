@@ -5,11 +5,12 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUser(id: number, updates: Partial<User>): Promise<User>;
+  getUsers(): Promise<User[]>;
   getLatestMetrics(): Promise<Metric>;
   executeCommand(command: string): Promise<string>;
   createAlert(alert: InsertAlert): Promise<Alert>;
   getLogs(): Promise<Log[]>;
-  // Mikrotik API methods
   connectMikrotik(device: Device): Promise<void>;
   disconnectMikrotik(deviceId: number): Promise<void>;
   executeMikrotikCommand(deviceId: number, command: string): Promise<string>;
@@ -30,7 +31,14 @@ export class MemStorage implements IStorage {
     this.devices = new Map();
     this.currentId = 1;
 
-    // Simulate metrics updates every second
+    // Create default admin account
+    this.createUser({
+      username: "admin",
+      password: "admin123", // This will be hashed by auth.ts
+      email: "admin@example.com",
+      isAdmin: true,
+    });
+
     this.updateInterval = setInterval(() => {
       this.metrics = {
         id: 1,
@@ -53,7 +61,6 @@ export class MemStorage implements IStorage {
         ]
       };
 
-      // Add sample system log
       this.logs.push({
         id: this.logs.length + 1,
         deviceId: 1,
@@ -85,6 +92,21 @@ export class MemStorage implements IStorage {
     return user;
   }
 
+  async updateUser(id: number, updates: Partial<User>): Promise<User> {
+    const user = await this.getUser(id);
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const updatedUser = { ...user, ...updates };
+    this.users.set(id, updatedUser);
+    return updatedUser;
+  }
+
+  async getUsers(): Promise<User[]> {
+    return Array.from(this.users.values());
+  }
+
   async getLatestMetrics(): Promise<Metric> {
     if (!this.metrics) {
       throw new Error("No metrics available");
@@ -93,7 +115,6 @@ export class MemStorage implements IStorage {
   }
 
   async executeCommand(command: string): Promise<string> {
-    // Log the command execution
     this.logs.push({
       id: this.logs.length + 1,
       deviceId: 1,
@@ -105,7 +126,6 @@ export class MemStorage implements IStorage {
   }
 
   async createAlert(alert: InsertAlert): Promise<Alert> {
-    // Log alert creation
     this.logs.push({
       id: this.logs.length + 1,
       deviceId: alert.deviceId,
@@ -125,7 +145,6 @@ export class MemStorage implements IStorage {
   }
 
   async connectMikrotik(device: Device): Promise<void> {
-    // Simulate Mikrotik connection
     this.logs.push({
       id: this.logs.length + 1,
       deviceId: device.id,

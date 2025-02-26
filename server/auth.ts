@@ -68,8 +68,26 @@ export function setupAuth(app: Express) {
     }
   });
 
+  // Create default admin account if it doesn't exist
+  (async () => {
+    const admin = await storage.getUserByUsername("admin");
+    if (!admin) {
+      await storage.createUser({
+        username: "admin",
+        password: await hashPassword("admin123"),
+        email: "admin@example.com",
+        isAdmin: true,
+      });
+    }
+  })();
+
   app.post("/api/register", async (req, res, next) => {
     try {
+      // Only admin can create new users
+      if (!req.isAuthenticated() || !req.user.isAdmin) {
+        return res.status(403).json({ error: "Chỉ admin mới có quyền tạo tài khoản mới" });
+      }
+
       const existingUser = await storage.getUserByUsername(req.body.username);
       if (existingUser) {
         return res.status(400).send("Tên đăng nhập đã tồn tại");
@@ -78,10 +96,10 @@ export function setupAuth(app: Express) {
       const user = await storage.createUser({
         ...req.body,
         password: await hashPassword(req.body.password),
+        isAdmin: false, // New users created by admin are not admins by default
       });
 
-      // Return success without auto login
-      res.status(201).json({ message: "Đăng ký thành công" });
+      res.status(201).json({ message: "Tạo tài khoản thành công" });
     } catch (error) {
       next(error);
     }
@@ -101,5 +119,37 @@ export function setupAuth(app: Express) {
   app.get("/api/user", (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     res.json(req.user);
+  });
+
+  // Admin routes
+  app.put("/api/users/:id", async (req, res) => {
+    if (!req.isAuthenticated() || !req.user.isAdmin) {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+
+    const { password, ...updates } = req.body;
+    const userId = parseInt(req.params.id);
+    const user = await storage.getUser(userId);
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Update password if provided
+    if (password) {
+      updates.password = await hashPassword(password);
+    }
+
+    const updatedUser = await storage.updateUser(userId, updates);
+    res.json(updatedUser);
+  });
+
+  app.get("/api/users", async (req, res) => {
+    if (!req.isAuthenticated() || !req.user.isAdmin) {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+
+    const users = await storage.getUsers();
+    res.json(users);
   });
 }
