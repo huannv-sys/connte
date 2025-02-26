@@ -62,6 +62,9 @@ export function setupAuth(app: Express) {
   passport.deserializeUser(async (id: number, done) => {
     try {
       const user = await storage.getUser(id);
+      if (!user) {
+        return done(new Error("User not found"), null);
+      }
       done(null, user);
     } catch (error) {
       done(error);
@@ -73,12 +76,14 @@ export function setupAuth(app: Express) {
     try {
       const admin = await storage.getUserByUsername("admin");
       if (!admin) {
+        const hashedPassword = await hashPassword("admin123");
         await storage.createUser({
           username: "admin",
-          password: await hashPassword("admin123"),
+          password: hashedPassword,
           email: "admin@example.com",
           isAdmin: true,
         });
+        console.log("Created default admin account");
       }
     } catch (error) {
       console.error("Failed to create admin account:", error);
@@ -109,8 +114,21 @@ export function setupAuth(app: Express) {
     }
   });
 
-  app.post("/api/login", passport.authenticate("local"), (req, res) => {
-    res.status(200).json(req.user);
+  app.post("/api/login", (req, res, next) => {
+    passport.authenticate("local", (err, user, info) => {
+      if (err) {
+        return next(err);
+      }
+      if (!user) {
+        return res.status(401).json({ error: info?.message || "Đăng nhập thất bại" });
+      }
+      req.logIn(user, (err) => {
+        if (err) {
+          return next(err);
+        }
+        res.json(user);
+      });
+    })(req, res, next);
   });
 
   app.post("/api/logout", (req, res, next) => {
