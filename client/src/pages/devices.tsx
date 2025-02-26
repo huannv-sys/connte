@@ -2,11 +2,12 @@ import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertDeviceSchema, type InsertDevice, type Device } from "@shared/schema";
+import { insertDeviceSchema, type InsertDevice, type Device, deviceTypes, deviceModels } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Loader2, PowerIcon, Terminal, Settings } from "lucide-react";
@@ -14,6 +15,7 @@ import { Loader2, PowerIcon, Terminal, Settings } from "lucide-react";
 export default function DevicesPage() {
   const { toast } = useToast();
   const [selectedDevice, setSelectedDevice] = useState<Device | null>(null);
+  const [selectedType, setSelectedType] = useState<string>("");
 
   const { data: devices, isLoading } = useQuery<Device[]>({
     queryKey: ["/api/devices"],
@@ -23,6 +25,8 @@ export default function DevicesPage() {
     resolver: zodResolver(insertDeviceSchema),
     defaultValues: {
       name: "",
+      type: "",
+      model: "",
       ipAddress: "",
       username: "",
       password: "",
@@ -41,6 +45,7 @@ export default function DevicesPage() {
         description: "Đã thêm thiết bị mới",
       });
       form.reset();
+      setSelectedType("");
     },
     onError: (error: Error) => {
       toast({
@@ -98,6 +103,50 @@ export default function DevicesPage() {
               </div>
 
               <div>
+                <label>Loại thiết bị</label>
+                <Select
+                  value={selectedType}
+                  onValueChange={(value) => {
+                    setSelectedType(value);
+                    form.setValue("type", value);
+                    form.setValue("model", ""); // Reset model when type changes
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Chọn loại thiết bị" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {deviceTypes.map((type) => (
+                      <SelectItem key={type.value} value={type.value}>
+                        {type.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {selectedType && (
+                <div>
+                  <label>Model thiết bị</label>
+                  <Select
+                    value={form.getValues("model")}
+                    onValueChange={(value) => form.setValue("model", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Chọn model thiết bị" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {deviceModels[selectedType as keyof typeof deviceModels].map((model) => (
+                        <SelectItem key={model.value} value={model.value}>
+                          {model.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              <div>
                 <label>Địa chỉ IP</label>
                 <Input {...form.register("ipAddress")} placeholder="VD: 192.168.1.1" />
               </div>
@@ -141,7 +190,12 @@ export default function DevicesPage() {
                     <div className="flex items-center justify-between">
                       <div>
                         <h3 className="font-bold">{device.name}</h3>
-                        <p className="text-sm text-muted-foreground">{device.ipAddress}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {device.ipAddress}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {deviceTypes.find(t => t.value === device.type)?.label} - {device.model}
+                        </p>
                       </div>
                       <Button
                         variant="ghost"
