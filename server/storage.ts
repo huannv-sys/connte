@@ -1,5 +1,5 @@
 import { users, type User, type InsertUser } from "@shared/schema";
-import { type Device, type Alert, type Metric, type InsertAlert, type Log } from "@shared/schema";
+import { type Device, type Alert, type Metric, type InsertAlert, type Log, type InsertDevice } from "@shared/schema";
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
@@ -13,6 +13,8 @@ export interface IStorage {
   connectMikrotik(device: Device): Promise<void>;
   disconnectMikrotik(deviceId: number): Promise<void>;
   executeMikrotikCommand(deviceId: number, command: string): Promise<string>;
+  getDevices(userId: number): Promise<Device[]>;
+  createDevice(device: InsertDevice & { userId: number }): Promise<Device>;
 }
 
 export class MemStorage implements IStorage {
@@ -21,9 +23,11 @@ export class MemStorage implements IStorage {
   private logs: Log[] = [];
   private updateInterval: NodeJS.Timeout;
   currentId: number;
+  private devices: Map<number, Device>;
 
   constructor() {
     this.users = new Map();
+    this.devices = new Map();
     this.currentId = 1;
 
     // Simulate metrics updates every second
@@ -150,6 +154,19 @@ export class MemStorage implements IStorage {
       timestamp: new Date()
     });
     return `Simulated Mikrotik command execution: ${command}`;
+  }
+
+  async getDevices(userId: number): Promise<Device[]> {
+    return Array.from(this.devices.values()).filter(
+      (device) => device.userId === userId
+    );
+  }
+
+  async createDevice(device: InsertDevice & { userId: number }): Promise<Device> {
+    const id = this.currentId++;
+    const newDevice: Device = { ...device, id };
+    this.devices.set(id, newDevice);
+    return newDevice;
   }
 }
 

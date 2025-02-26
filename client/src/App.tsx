@@ -8,6 +8,7 @@ import Dashboard from "@/pages/dashboard";
 import Terminal from "@/pages/terminal";
 import Config from "@/pages/config";
 import Logs from "@/pages/logs";
+import Devices from "@/pages/devices";
 import AuthPage from "@/pages/auth-page";
 import NotFound from "@/pages/not-found";
 import { SidebarProvider, Sidebar } from "@/components/ui/sidebar";
@@ -26,6 +27,7 @@ function Router() {
           <ProtectedRoute path="/terminal" component={Terminal} />
           <ProtectedRoute path="/config" component={Config} />
           <ProtectedRoute path="/logs" component={Logs} />
+          <ProtectedRoute path="/devices" component={Devices} />
           <Route path="/auth" component={AuthPage} />
           <Route component={NotFound} />
         </Switch>

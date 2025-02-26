@@ -66,6 +66,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/devices", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    const devices = await storage.getDevices(req.user.id);
+    res.json(devices);
+  });
+
   app.post("/api/devices/:id/disconnect", async (req, res) => {
     try {
       const deviceId = parseInt(req.params.id);
