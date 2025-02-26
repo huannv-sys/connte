@@ -28,8 +28,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // REST API routes
-  app.get("/api/metrics", async (_req, res) => {
-    const metrics = await storage.getLatestMetrics();
+  app.get("/api/metrics/:deviceId", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const deviceId = parseInt(req.params.deviceId);
+    const metrics = await storage.getLatestMetrics(deviceId);
     res.json(metrics);
   });
 
@@ -44,8 +49,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const alert = insertAlertSchema.parse(req.body);
       await storage.createAlert(alert);
       res.json({ success: true });
-    } catch (error) {
-      res.status(400).json({ error: "Invalid alert configuration" });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Invalid alert configuration" });
     }
   });
 
@@ -71,8 +76,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Attempt to connect to the device after creating it
       await storage.connectMikrotik(device);
       res.json(device);
-    } catch (error) {
-      res.status(400).json({ error: "Lỗi khi thêm thiết bị" });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Lỗi khi thêm thiết bị" });
     }
   });
 
@@ -89,8 +94,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const deviceId = parseInt(req.params.id);
       await storage.disconnectMikrotik(deviceId);
       res.json({ success: true });
-    } catch (error) {
-      res.status(500).json({ error: "Failed to disconnect device" });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to disconnect device" });
     }
   });
 
@@ -100,8 +105,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { command } = req.body;
       const output = await storage.executeMikrotikCommand(deviceId, command);
       res.json({ output });
-    } catch (error) {
-      res.status(500).json({ error: "Failed to execute command" });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to execute command" });
     }
   });
 

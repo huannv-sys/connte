@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { Loader2, PowerIcon, Terminal, Settings } from "lucide-react";
 
 export default function DevicesPage() {
   const { toast } = useToast();
@@ -34,6 +35,7 @@ export default function DevicesPage() {
       await apiRequest("POST", "/api/devices", data);
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/devices"] });
       toast({
         title: "Thành công",
         description: "Đã thêm thiết bị mới",
@@ -54,6 +56,7 @@ export default function DevicesPage() {
       await apiRequest("POST", `/api/devices/${deviceId}/disconnect`);
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/devices"] });
       toast({
         title: "Thành công",
         description: "Đã ngắt kết nối thiết bị",
@@ -73,7 +76,11 @@ export default function DevicesPage() {
   };
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
   }
 
   return (
@@ -87,12 +94,12 @@ export default function DevicesPage() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <div>
                 <label>Tên thiết bị</label>
-                <Input {...form.register("name")} />
+                <Input {...form.register("name")} placeholder="VD: Router Văn Phòng" />
               </div>
 
               <div>
                 <label>Địa chỉ IP</label>
-                <Input {...form.register("ipAddress")} />
+                <Input {...form.register("ipAddress")} placeholder="VD: 192.168.1.1" />
               </div>
 
               <div>
@@ -110,7 +117,12 @@ export default function DevicesPage() {
                 <Input {...form.register("apiKey")} />
               </div>
 
-              <Button type="submit">Thêm thiết bị</Button>
+              <Button type="submit" disabled={addDeviceMutation.isPending}>
+                {addDeviceMutation.isPending && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
+                Thêm thiết bị
+              </Button>
             </form>
           </Form>
         </CardContent>
@@ -121,59 +133,72 @@ export default function DevicesPage() {
           <CardTitle>Danh sách thiết bị</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {devices?.map((device) => (
-              <div key={device.id} className="p-4 border rounded">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <h3 className="font-bold">{device.name}</h3>
-                    <p className="text-sm text-muted-foreground">{device.ipAddress}</p>
-                  </div>
-                  <div className="space-x-2">
-                    <Button 
-                      variant="outline"
-                      onClick={() => setSelectedDevice(device)}
-                    >
-                      Gửi lệnh
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      onClick={() => disconnectMutation.mutate(device.id)}
-                    >
-                      Ngắt kết nối
-                    </Button>
-                  </div>
-                </div>
-
-                {selectedDevice?.id === device.id && (
-                  <div className="mt-4">
-                    <div className="flex gap-2">
-                      <Input
-                        placeholder="Nhập lệnh API..."
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            commandMutation.mutate({
-                              deviceId: device.id,
-                              command: e.currentTarget.value,
-                            });
-                            e.currentTarget.value = "";
-                          }
-                        }}
-                      />
+              <Card key={device.id} className="bg-muted/50">
+                <CardContent className="pt-6">
+                  <div className="flex flex-col gap-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="font-bold">{device.name}</h3>
+                        <p className="text-sm text-muted-foreground">{device.ipAddress}</p>
+                      </div>
                       <Button
-                        onClick={() => setSelectedDevice(null)}
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => disconnectMutation.mutate(device.id)}
                       >
-                        Đóng
+                        <PowerIcon className="h-4 w-4" />
                       </Button>
                     </div>
-                    {commandMutation.data && (
-                      <pre className="mt-2 p-2 bg-muted rounded">
-                        {JSON.stringify(commandMutation.data, null, 2)}
-                      </pre>
+
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => setSelectedDevice(device)}
+                      >
+                        <Terminal className="mr-2 h-4 w-4" />
+                        Gửi lệnh
+                      </Button>
+                      <Button variant="outline" className="flex-1">
+                        <Settings className="mr-2 h-4 w-4" />
+                        Cấu hình
+                      </Button>
+                    </div>
+
+                    {selectedDevice?.id === device.id && (
+                      <div className="mt-4">
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder="Nhập lệnh API..."
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                commandMutation.mutate({
+                                  deviceId: device.id,
+                                  command: e.currentTarget.value,
+                                });
+                                e.currentTarget.value = "";
+                              }
+                            }}
+                          />
+                          <Button
+                            variant="ghost"
+                            onClick={() => setSelectedDevice(null)}
+                          >
+                            Đóng
+                          </Button>
+                        </div>
+                        {commandMutation.data && (
+                          <pre className="mt-2 p-2 bg-muted rounded text-sm">
+                            {JSON.stringify(commandMutation.data, null, 2)}
+                          </pre>
+                        )}
+                      </div>
                     )}
                   </div>
-                )}
-              </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
         </CardContent>

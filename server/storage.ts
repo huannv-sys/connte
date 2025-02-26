@@ -7,7 +7,7 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, updates: Partial<User>): Promise<User>;
   getUsers(): Promise<User[]>;
-  getLatestMetrics(): Promise<Metric>;
+  getLatestMetrics(deviceId?: number): Promise<Metric>;
   executeCommand(command: string): Promise<string>;
   createAlert(alert: InsertAlert): Promise<Alert>;
   getLogs(): Promise<Log[]>;
@@ -20,7 +20,7 @@ export interface IStorage {
 
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
-  private metrics: Metric | null = null;
+  private metrics: Map<number, Metric>;
   private logs: Log[] = [];
   private updateInterval: NodeJS.Timeout;
   currentId: number;
@@ -29,36 +29,41 @@ export class MemStorage implements IStorage {
   constructor() {
     this.users = new Map();
     this.devices = new Map();
+    this.metrics = new Map();
     this.currentId = 1;
 
     this.updateInterval = setInterval(() => {
-      this.metrics = {
-        id: 1,
-        deviceId: 1,
-        timestamp: new Date(),
-        cpuLoad: Math.floor(Math.random() * 100),
-        memoryUsed: Math.floor(Math.random() * 100),
-        interfaces: {
-          ether1: "up",
-          "vlan100": "up",
-          "bridge1": "up"
-        },
-        vpnStatus: {
-          "vpn0": "connected",
-          "l2tp-out1": "disconnected"
-        },
-        wifiClients: [
-          { mac: "00:11:22:33:44:55", hostname: "device1", signal: "-65dBm" },
-          { mac: "AA:BB:CC:DD:EE:FF", hostname: "device2", signal: "-72dBm" }
-        ]
-      };
+      // Update metrics for all devices
+      this.devices.forEach((device) => {
+        this.metrics.set(device.id, {
+          id: this.metrics.size + 1,
+          deviceId: device.id,
+          timestamp: new Date(),
+          cpuLoad: Math.floor(Math.random() * 100),
+          memoryUsed: Math.floor(Math.random() * 100),
+          interfaces: {
+            ether1: "up",
+            "vlan100": "up",
+            "bridge1": "up"
+          },
+          vpnStatus: {
+            "vpn0": "connected",
+            "l2tp-out1": "disconnected"
+          },
+          wifiClients: [
+            { mac: "00:11:22:33:44:55", hostname: "device1", signal: "-65dBm" },
+            { mac: "AA:BB:CC:DD:EE:FF", hostname: "device2", signal: "-72dBm" }
+          ]
+        });
 
-      this.logs.push({
-        id: this.logs.length + 1,
-        deviceId: 1,
-        type: "system",
-        message: `System metrics updated - CPU: ${this.metrics.cpuLoad}%, Memory: ${this.metrics.memoryUsed}%`,
-        timestamp: new Date()
+        // Add sample system log
+        this.logs.push({
+          id: this.logs.length + 1,
+          deviceId: device.id,
+          type: "system",
+          message: `System metrics updated for ${device.name}`,
+          timestamp: new Date()
+        });
       });
     }, 1000);
   }
@@ -100,11 +105,21 @@ export class MemStorage implements IStorage {
     return Array.from(this.users.values());
   }
 
-  async getLatestMetrics(): Promise<Metric> {
-    if (!this.metrics) {
-      throw new Error("No metrics available");
+  async getLatestMetrics(deviceId?: number): Promise<Metric> {
+    if (deviceId) {
+      const metrics = this.metrics.get(deviceId);
+      if (!metrics) {
+        throw new Error("Không tìm thấy thiết bị");
+      }
+      return metrics;
     }
-    return this.metrics;
+
+    // If no deviceId specified, return metrics for the first device
+    const firstMetrics = Array.from(this.metrics.values())[0];
+    if (!firstMetrics) {
+      throw new Error("Chưa có thiết bị nào");
+    }
+    return firstMetrics;
   }
 
   async executeCommand(command: string): Promise<string> {
@@ -139,13 +154,10 @@ export class MemStorage implements IStorage {
 
   async connectMikrotik(device: Device): Promise<void> {
     try {
-      // In a real implementation, this would connect to the actual Mikrotik API
-      // For now we'll simulate a connection check
       if (!device.ipAddress || !device.username || !device.password || !device.apiKey) {
         throw new Error("Thiếu thông tin kết nối");
       }
 
-      // Log successful connection
       this.logs.push({
         id: this.logs.length + 1,
         deviceId: device.id,
@@ -154,7 +166,6 @@ export class MemStorage implements IStorage {
         timestamp: new Date()
       });
     } catch (error: any) {
-      // Log connection failure
       this.logs.push({
         id: this.logs.length + 1,
         deviceId: device.id,
@@ -196,7 +207,7 @@ export class MemStorage implements IStorage {
     try {
       const device = Array.from(this.devices.values()).find(d => d.id === deviceId);
       if (!device) {
-        throw new Error("Không tìm thấy thiết bị");
+        throw new Error("Không tìm thấy thiết bj");
       }
 
       this.logs.push({
