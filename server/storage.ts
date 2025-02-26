@@ -1,8 +1,5 @@
 import { users, type User, type InsertUser } from "@shared/schema";
-import { type Device, type Alert, type Metric, type InsertAlert } from "@shared/schema";
-
-// modify the interface with any CRUD methods
-// you might need
+import { type Device, type Alert, type Metric, type InsertAlert, type Log } from "@shared/schema";
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
@@ -11,17 +8,24 @@ export interface IStorage {
   getLatestMetrics(): Promise<Metric>;
   executeCommand(command: string): Promise<string>;
   createAlert(alert: InsertAlert): Promise<Alert>;
+  getLogs(): Promise<Log[]>;
+  // Mikrotik API methods
+  connectMikrotik(device: Device): Promise<void>;
+  disconnectMikrotik(deviceId: number): Promise<void>;
+  executeMikrotikCommand(deviceId: number, command: string): Promise<string>;
 }
 
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
   private metrics: Metric | null = null;
+  private logs: Log[] = [];
   private updateInterval: NodeJS.Timeout;
   currentId: number;
 
   constructor() {
     this.users = new Map();
     this.currentId = 1;
+
     // Simulate metrics updates every second
     this.updateInterval = setInterval(() => {
       this.metrics = {
@@ -44,6 +48,15 @@ export class MemStorage implements IStorage {
           { mac: "AA:BB:CC:DD:EE:FF", hostname: "device2", signal: "-72dBm" }
         ]
       };
+
+      // Add sample system log
+      this.logs.push({
+        id: this.logs.length + 1,
+        deviceId: 1,
+        type: "system",
+        message: `System metrics updated - CPU: ${this.metrics.cpuLoad}%, Memory: ${this.metrics.memoryUsed}%`,
+        timestamp: new Date()
+      });
     }, 1000);
   }
 
@@ -59,7 +72,11 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.currentId++;
-    const user: User = { ...insertUser, id };
+    const user: User = { 
+      ...insertUser, 
+      id,
+      createdAt: new Date() 
+    };
     this.users.set(id, user);
     return user;
   }
@@ -72,17 +89,67 @@ export class MemStorage implements IStorage {
   }
 
   async executeCommand(command: string): Promise<string> {
-    // Simulate command execution
+    // Log the command execution
+    this.logs.push({
+      id: this.logs.length + 1,
+      deviceId: 1,
+      type: "system",
+      message: `Command executed: ${command}`,
+      timestamp: new Date()
+    });
     return `Executed command: ${command}\nOutput: Command simulation successful`;
   }
 
   async createAlert(alert: InsertAlert): Promise<Alert> {
-    // Simulate alert creation
+    // Log alert creation
+    this.logs.push({
+      id: this.logs.length + 1,
+      deviceId: alert.deviceId,
+      type: "system",
+      message: `Alert created for ${alert.type} with threshold ${alert.threshold}%`,
+      timestamp: new Date()
+    });
     return {
       id: 1,
       ...alert,
       enabled: true
     };
+  }
+
+  async getLogs(): Promise<Log[]> {
+    return this.logs;
+  }
+
+  async connectMikrotik(device: Device): Promise<void> {
+    // Simulate Mikrotik connection
+    this.logs.push({
+      id: this.logs.length + 1,
+      deviceId: device.id,
+      type: "system",
+      message: `Connected to Mikrotik device ${device.name} (${device.ipAddress})`,
+      timestamp: new Date()
+    });
+  }
+
+  async disconnectMikrotik(deviceId: number): Promise<void> {
+    this.logs.push({
+      id: this.logs.length + 1,
+      deviceId: deviceId,
+      type: "system",
+      message: "Disconnected from Mikrotik device",
+      timestamp: new Date()
+    });
+  }
+
+  async executeMikrotikCommand(deviceId: number, command: string): Promise<string> {
+    this.logs.push({
+      id: this.logs.length + 1,
+      deviceId: deviceId,
+      type: "system",
+      message: `Executed Mikrotik command: ${command}`,
+      timestamp: new Date()
+    });
+    return `Simulated Mikrotik command execution: ${command}`;
   }
 }
 
