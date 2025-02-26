@@ -49,7 +49,7 @@ export function setupAuth(app: Express) {
       try {
         const user = await storage.getUserByUsername(username);
         if (!user || !(await comparePasswords(password, user.password))) {
-          return done(null, false, { message: "Invalid username or password" });
+          return done(null, false, { message: "Tài khoản hoặc mật khẩu không đúng" });
         }
         return done(null, user);
       } catch (error) {
@@ -72,7 +72,7 @@ export function setupAuth(app: Express) {
     try {
       const existingUser = await storage.getUserByUsername(req.body.username);
       if (existingUser) {
-        return res.status(400).send("Username already exists");
+        return res.status(400).send("Tên đăng nhập đã tồn tại");
       }
 
       const user = await storage.createUser({
@@ -80,10 +80,8 @@ export function setupAuth(app: Express) {
         password: await hashPassword(req.body.password),
       });
 
-      req.login(user, (err) => {
-        if (err) return next(err);
-        res.status(201).json(user);
-      });
+      // Return success without auto login
+      res.status(201).json({ message: "Đăng ký thành công" });
     } catch (error) {
       next(error);
     }

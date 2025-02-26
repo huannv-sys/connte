@@ -57,12 +57,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Mikrotik device management endpoints
   app.post("/api/devices", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
     try {
-      const device = insertDeviceSchema.parse(req.body);
+      const deviceData = insertDeviceSchema.parse(req.body);
+      const device = await storage.createDevice({
+        ...deviceData,
+        userId: req.user.id
+      });
+
+      // Attempt to connect to the device after creating it
       await storage.connectMikrotik(device);
-      res.json({ success: true });
+      res.json(device);
     } catch (error) {
-      res.status(400).json({ error: "Invalid device configuration" });
+      res.status(400).json({ error: "Lỗi khi thêm thiết bị" });
     }
   });
 
