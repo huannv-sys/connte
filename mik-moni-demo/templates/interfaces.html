@@ -36,7 +36,29 @@
 </div>
 {% endblock %}
 
+{% block head %}
+{{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    /* Style for detailed interface view */
+    .detailed-interface-stats input {
+        font-family: monospace;
+        font-size: 0.9rem;
+    }
+    
+    .interface-traffic-charts .traffic-chart {
+        margin-bottom: 1rem;
+    }
+    
+    .status-indicator {
+        min-width: 80px;
+        text-align: center;
+    }
+</style>
+{% endblock %}
+
 {% block scripts %}
+<script src="{{ url_for('static', filename='js/interface-details.js') }}"></script>
 <script src="{{ url_for('static', filename='js/interfaces.js') }}"></script>
 
 <!-- WebSocket Interfaces Integration -->
