@@ -740,8 +740,8 @@ function loadInterfacesSummary(deviceId) {
                                     '<span class="badge bg-secondary">DISABLED</span>' : 
                                     '<span class="badge bg-danger">DOWN</span>')}
                         </td>
-                        <td>${formatSpeed(iface.rx_speed)}</td>
-                        <td>${formatSpeed(iface.tx_speed)}</td>
+                        <td>${iface.rx_speed > 0 ? formatSpeed(iface.rx_speed) : '0 bps'}</td>
+                        <td>${iface.tx_speed > 0 ? formatSpeed(iface.tx_speed) : '0 bps'}</td>
                     </tr>
                 `).join('');
                 
@@ -771,8 +771,8 @@ function loadInterfacesSummary(deviceId) {
                                     <canvas id="trafficChart_${iface.name.replace(/[^a-zA-Z0-9]/g, '_')}"></canvas>
                                 </div>
                                 <div class="d-flex justify-content-between mt-2">
-                                    <small class="text-success">RX: ${formatSpeed(iface.rx_speed)}</small>
-                                    <small class="text-primary">TX: ${formatSpeed(iface.tx_speed)}</small>
+                                    <small class="text-success">RX: ${iface.rx_speed > 0 ? formatSpeed(iface.rx_speed) : '0 bps'}</small>
+                                    <small class="text-primary">TX: ${iface.tx_speed > 0 ? formatSpeed(iface.tx_speed) : '0 bps'}</small>
                                 </div>
                             </div>
                         </div>
