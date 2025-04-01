@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Mikrotik Monitoring{% endblock %}</title>
+    <title>Logs - Mikrotik Monitoring</title>
     
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
@@ -19,9 +19,9 @@
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
     
     <!-- Custom Styles -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="/static/css/style.css">
     
-    {% block head_extras %}{% endblock %}
+    
 </head>
 <body>
     <header class="py-2 mikrotik-header">
@@ -40,11 +40,11 @@
                     </div>
                     
                     <select id="deviceSelect" class="form-select form-select-sm me-2" style="max-width: 200px;">
-                        {% for device in devices %}
-                        <option value="{{ device.id }}" {% if device.id == active_device %}selected{% endif %}>
-                            {{ device.name }}
+                        
+                        <option value="0c11bc07-f946-4030-b085-cd21bc77515d" selected>
+                            nha
                         </option>
-                        {% endfor %}
+                        
                     </select>
                     
                     <!-- Refresh Interval Selector -->
@@ -82,52 +82,52 @@
                 <div class="position-sticky pt-3">
                     <ul class="nav flex-column">
                         <li class="nav-item">
-                            <a class="nav-link {% if page == 'dashboard' %}active{% endif %}" href="{{ url_for('views.index') }}">
+                            <a class="nav-link " href="/">
                                 <i class="bi bi-speedometer2"></i> Dashboard
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if page == 'system' %}active{% endif %}" href="{{ url_for('views.system') }}">
+                            <a class="nav-link " href="/system">
                                 <i class="bi bi-cpu"></i> System
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if page == 'interfaces' %}active{% endif %}" href="{{ url_for('views.interfaces') }}">
+                            <a class="nav-link " href="/interfaces">
                                 <i class="bi bi-ethernet"></i> Interfaces
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if page == 'ip' %}active{% endif %}" href="{{ url_for('views.ip') }}">
+                            <a class="nav-link " href="/ip">
                                 <i class="bi bi-hdd-network"></i> IP & ARP
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if page == 'services' %}active{% endif %}" href="{{ url_for('views.services') }}">
+                            <a class="nav-link " href="/services">
                                 <i class="bi bi-gear"></i> Services
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if page == 'logs' %}active{% endif %}" href="{{ url_for('views.logs') }}">
+                            <a class="nav-link active" href="/logs">
                                 <i class="bi bi-journal-text"></i> Logs
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if page == 'alerts' %}active{% endif %}" href="{{ url_for('views.alerts') }}">
+                            <a class="nav-link " href="/alerts">
                                 <i class="bi bi-exclamation-triangle"></i> Alerts
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if page == 'sites' %}active{% endif %}" href="{{ url_for('views.sites') }}">
+                            <a class="nav-link " href="/sites">
                                 <i class="bi bi-geo-alt"></i> Quản lý Sites
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if page == 'discovery' %}active{% endif %}" href="{{ url_for('views.discovery_page') }}">
+                            <a class="nav-link " href="/discovery">
                                 <i class="bi bi-search"></i> Phát hiện thiết bị
                             </a>
                         </li>
                         <li class="nav-item mt-3">
-                            <a class="nav-link {% if page == 'settings' %}active{% endif %}" href="{{ url_for('views.settings') }}">
+                            <a class="nav-link " href="/settings">
                                 <i class="bi bi-sliders"></i> Cài đặt
                             </a>
                         </li>
@@ -140,52 +140,52 @@
                 <div class="sidebar">
                     <ul class="nav nav-pills flex-column flex-md-row">
                         <li class="nav-item">
-                            <a class="nav-link {% if page == 'dashboard' %}active{% endif %}" href="{{ url_for('views.index') }}">
+                            <a class="nav-link " href="/">
                                 <i class="bi bi-speedometer2"></i> <span class="d-none d-sm-inline">Dashboard</span>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if page == 'system' %}active{% endif %}" href="{{ url_for('views.system') }}">
+                            <a class="nav-link " href="/system">
                                 <i class="bi bi-cpu"></i> <span class="d-none d-sm-inline">Hệ thống</span>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if page == 'interfaces' %}active{% endif %}" href="{{ url_for('views.interfaces') }}">
+                            <a class="nav-link " href="/interfaces">
                                 <i class="bi bi-ethernet"></i> <span class="d-none d-sm-inline">Interfaces</span>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if page == 'ip' %}active{% endif %}" href="{{ url_for('views.ip') }}">
+                            <a class="nav-link " href="/ip">
                                 <i class="bi bi-hdd-network"></i> <span class="d-none d-sm-inline">IP & ARP</span>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if page == 'services' %}active{% endif %}" href="{{ url_for('views.services') }}">
+                            <a class="nav-link " href="/services">
                                 <i class="bi bi-gear"></i> <span class="d-none d-sm-inline">Dịch vụ</span>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if page == 'logs' %}active{% endif %}" href="{{ url_for('views.logs') }}">
+                            <a class="nav-link active" href="/logs">
                                 <i class="bi bi-journal-text"></i> <span class="d-none d-sm-inline">Logs</span>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if page == 'alerts' %}active{% endif %}" href="{{ url_for('views.alerts') }}">
+                            <a class="nav-link " href="/alerts">
                                 <i class="bi bi-exclamation-triangle"></i> <span class="d-none d-sm-inline">Cảnh báo</span>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if page == 'sites' %}active{% endif %}" href="{{ url_for('views.sites') }}">
+                            <a class="nav-link " href="/sites">
                                 <i class="bi bi-geo-alt"></i> <span class="d-none d-sm-inline">Sites</span>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if page == 'discovery' %}active{% endif %}" href="{{ url_for('views.discovery_page') }}">
+                            <a class="nav-link " href="/discovery">
                                 <i class="bi bi-search"></i> <span class="d-none d-sm-inline">Phát hiện thiết bị</span>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if page == 'settings' %}active{% endif %}" href="{{ url_for('views.settings') }}">
+                            <a class="nav-link " href="/settings">
                                 <i class="bi bi-sliders"></i> <span class="d-none d-sm-inline">Cài đặt</span>
                             </a>
                         </li>
@@ -195,17 +195,43 @@
             
             <!-- Main Content -->
             <div class="col-md-9 col-xl-10 ms-auto py-3">
-                {% with messages = get_flashed_messages(with_categories=true) %}
-                    {% if messages %}
-                        {% for category, message in messages %}
-                            <div class="alert alert-{{ category }}">
-                                {{ message }}
-                            </div>
-                        {% endfor %}
-                    {% endif %}
-                {% endwith %}
                 
-                {% block content %}{% endblock %}
+                    
+                
+                
+                
+<div class="row">
+    <div class="col-12">
+        <h2 class="mb-4">System Logs</h2>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Log Topics Analysis -->
+    <div class="col-12">
+        <div class="card" id="logTopicsCard">
+            <div class="card-body text-center d-flex align-items-center justify-content-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <!-- System Logs -->
+    <div class="col-12">
+        <div class="card" id="systemLogsCard">
+            <div class="card-body text-center d-flex align-items-center justify-content-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
             </div>
         </div>
     </div>
@@ -243,8 +269,8 @@
     <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
     
     <!-- Utility Scripts -->
-    <script src="{{ url_for('static', filename='js/utils.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+    <script src="/static/js/utils.js"></script>
+    <script src="/static/js/charts.js"></script>
     
     <!-- WebSocket Initialization -->
     <script>
@@ -385,6 +411,8 @@
         updateServerTime();
     </script>
     
-    {% block scripts %}{% endblock %}
+    
+<script src="/static/js/logs.js"></script>
+
 </body>
 </html>

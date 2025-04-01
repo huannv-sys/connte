@@ -11,6 +11,14 @@ function initLogsPage() {
         });
     }
     
+    // Cập nhật logs khi kết nối WebSocket được khôi phục
+    $(document).on('socket_reconnected', function() {
+        console.log('WebSocket reconnected trong logs page - cập nhật dữ liệu');
+        if (deviceSelect && deviceSelect.value) {
+            loadLogsData(deviceSelect.value);
+        }
+    });
+    
     // Get device from URL parameter or use first device
     const urlParams = new URLSearchParams(window.location.search);
     const deviceId = urlParams.get('device');

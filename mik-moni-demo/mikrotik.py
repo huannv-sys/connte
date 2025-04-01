@@ -965,8 +965,27 @@ class MikrotikAPI:
                         # Thử tạo log trực tiếp đầu tiên thay vì sử dụng script
                         try:
                             logger.info(f"Trying to generate logs directly with /log command on device {device_id}")
-                            api.get_binary_resource('/').call('log/info', {'message': 'Test log message from monitoring system'})
-                            logger.info(f"Successfully generated log directly on device {device_id}")
+                            try:
+                                # Phương pháp 1: Sử dụng binary resource với message dạng bytes
+                                api.get_binary_resource('/').call('log/info', {'message': b'Test log message from monitoring system'})
+                                logger.info(f"Successfully generated log directly (method 1) on device {device_id}")
+                            except Exception as err1:
+                                logger.debug(f"Failed first attempt to generate log: {str(err1)}")
+                                try:
+                                    # Phương pháp 2: Thử với resource log chuẩn
+                                    log_resource = api.get_resource('/log')
+                                    log_resource.add(message='Test log message from monitoring system', topics='info')
+                                    logger.info(f"Successfully generated log (method 2) on device {device_id}")
+                                except Exception as err2:
+                                    logger.debug(f"Failed second attempt to generate log: {str(err2)}")
+                                    try:
+                                        # Phương pháp 3: Sử dụng system script
+                                        system_resource = api.get_resource('/system')
+                                        system_resource.execute_command('log/info', {'message': 'Test log from monitoring system'})
+                                        logger.info(f"Successfully generated log (method 3) on device {device_id}")
+                                    except Exception as err3:
+                                        logger.debug(f"Failed third attempt to generate log: {str(err3)}")
+                                        raise  # Tiếp tục với logic script hiện có
                         except Exception as direct_log_err:
                             logger.error(f"Failed to generate log directly: {str(direct_log_err)}")
                             
