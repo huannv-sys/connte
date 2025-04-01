@@ -20,6 +20,17 @@ function initInterfacesPage() {
         }
     });
     
+    // Listen for WebSocket interface updates
+    socket.on('interface_updates', function(data) {
+        console.log("Received interface updates via WebSocket");
+        const activeDeviceId = deviceSelect?.value;
+        
+        // Only update if the data is for the currently selected device
+        if (activeDeviceId && data.device_id === activeDeviceId) {
+            updateInterfaceSpeedData(data.interfaces);
+        }
+    });
+    
     // Get device from URL parameter or use first device
     const urlParams = new URLSearchParams(window.location.search);
     const deviceId = urlParams.get('device');
@@ -99,19 +110,21 @@ function loadInterfacesList(deviceId) {
                             </thead>
                             <tbody>
                                 ${interfaces.map(iface => `
-                                    <tr>
+                                    <tr data-interface="${iface.name}">
                                         <td>${iface.name}</td>
                                         <td>${iface.type}</td>
                                         <td>
+                                            <span id="status_${iface.name}">
                                             ${iface.running ? 
                                                 '<span class="badge bg-success">UP</span>' : 
                                                 (iface.disabled ? 
                                                     '<span class="badge bg-secondary">DISABLED</span>' : 
                                                     '<span class="badge bg-danger">DOWN</span>')}
+                                            </span>
                                         </td>
                                         <td>${formatMacAddress(iface.mac_address)}</td>
-                                        <td>${formatSpeed(iface.rx_speed)}</td>
-                                        <td>${formatSpeed(iface.tx_speed)}</td>
+                                        <td id="rx_speed_${iface.name}" class="rx-speed">${formatSpeed(iface.rx_speed)}</td>
+                                        <td id="tx_speed_${iface.name}" class="tx-speed">${formatSpeed(iface.tx_speed)}</td>
                                         <td>${iface.actual_mtu}</td>
                                         <td>
                                             <button type="button" class="btn btn-sm btn-primary interface-details-btn" 
@@ -685,6 +698,36 @@ function createInterfaceTrafficChart(ctx, history) {
                     }
                 }
             }
+        }
+    });
+}
+
+// Update interface speed data without reloading the entire table
+function updateInterfaceSpeedData(interfaces) {
+    if (!interfaces || interfaces.length === 0) return;
+    
+    interfaces.forEach(iface => {
+        // Update RX speed
+        const rxElement = document.getElementById(`rx_speed_${iface.name}`);
+        if (rxElement) {
+            rxElement.textContent = formatSpeed(iface.rx_speed);
+        }
+        
+        // Update TX speed
+        const txElement = document.getElementById(`tx_speed_${iface.name}`);
+        if (txElement) {
+            txElement.textContent = formatSpeed(iface.tx_speed);
+        }
+        
+        // Update status if changed
+        const statusElement = document.getElementById(`status_${iface.name}`);
+        if (statusElement) {
+            const statusHtml = iface.running ? 
+                '<span class="badge bg-success">UP</span>' : 
+                (iface.disabled ? 
+                    '<span class="badge bg-secondary">DISABLED</span>' : 
+                    '<span class="badge bg-danger">DOWN</span>');
+            statusElement.innerHTML = statusHtml;
         }
     });
 }

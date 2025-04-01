@@ -115,11 +115,18 @@ def emit_network_speeds():
                     })
                 
                 # Phát sóng dữ liệu qua WebSocket
+                # Phát sóng cho tất cả phòng của thiết bị
                 socketio.emit('network_speeds', {
                     'device_id': device_id, 
                     'device_name': device.name,
                     'interfaces': interface_data,
                     'high_precision': high_precision_mode
+                })
+                
+                # Phát sóng cập nhật giao diện, có thể nhận từ trang interfaces
+                socketio.emit('interface_updates', {
+                    'device_id': device_id,
+                    'interfaces': interface_data
                 })
                 logger.debug(f"Đã phát sóng dữ liệu tốc độ mạng cho thiết bị {device.name}")
             

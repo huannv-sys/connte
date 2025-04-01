@@ -1,0 +1,152 @@
+import sys
+import time
+import logging
+from functools import wraps
+from librouteros import connect, ConnectionError
+from PyQt5.QtCore import QObject, pyqtSignal, QTimer
+
+class MikroTikConnectionManager(QObject):
+    on_connect = pyqtSignal()
+    on_disconnect = pyqtSignal(str)
+    connection_status_changed = pyqtSignal(str)
+
+    def __init__(self, host, username, password, max_retries=5, retry_interval=10):
+        super().__init__()
+        self.host = host
+        self.username = username
+        self.password = password
+        self.max_retries = max_retries
+        self.retry_interval = retry_interval
+        self.connection = None
+        self.retry_count = 0
+        self.connected = False
+        self.heartbeat_timer = QTimer()
+        self.heartbeat_timer.timeout.connect(self.check_connection)
+
+        # Setup logging
+        self.logger = logging.getLogger('MikroTikConnector')
+        self.logger.setLevel(logging.INFO)
+        handler = logging.StreamHandler()
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        handler.setFormatter(formatter)
+        self.logger.addHandler(handler)
+
+    def handle_errors(func):
+        @wraps(func)
+        def wrapper(self, *args, **kwargs):
+            try:
+                return func(self, *args, **kwargs)
+            except ConnectionError as e:
+                self.logger.error(f"Connection error: {str(e)}")
+                self.handle_disconnection(str(e))
+            except Exception as e:
+                self.logger.error(f"Unexpected error: {str(e)}")
+                self.handle_disconnection(str(e))
+        return wrapper
+
+    @handle_errors
+    def connect(self):
+        self.logger.info("Attempting to connect...")
+        self.connection_status_changed.emit("CONNECTING")
+        
+        self.connection = connect(
+            host=self.host,
+            username=self.username,
+            password=self.password,
+            port=8729,
+            ssl=True,
+            timeout=10
+        )
+        
+        if self.connection:
+            self.retry_count = 0
+            self.connected = True
+            self.on_connect.emit()
+            self.heartbeat_timer.start(5000)  # Check every 5 seconds
+            self.connection_status_changed.emit("CONNECTED")
+            self.logger.info("Connection established successfully")
+            return True
+        return False
+
+    def reconnect(self):
+        if self.retry_count < self.max_retries:
+            self.retry_count += 1
+            self.logger.warning(f"Reconnecting attempt {self.retry_count}/{self.max_retries}")
+            self.connection_status_changed.emit(f"RECONNECTING ({self.retry_count}/{self.max_retries})")
+            time.sleep(self.calculate_backoff())
+            return self.connect()
+        else:
+            self.logger.error("Max reconnection attempts reached")
+            self.connection_status_changed.emit("DISCONNECTED")
+            return False
+
+    def calculate_backoff(self):
+        return min(self.retry_interval * (2 ** (self.retry_count - 1)), 300)
+
+    @handle_errors
+    def check_connection(self):
+        try:
+            # Simple API call to check connection
+            self.connection('/system/resource/getall')
+            self.connection_status_changed.emit("CONNECTED")
+        except Exception as e:
+            self.logger.warning("Heartbeat check failed")
+            self.handle_disconnection(str(e))
+
+    def handle_disconnection(self, error_msg):
+        if self.connected:
+            self.connected = False
+            self.heartbeat_timer.stop()
+            self.on_disconnect.emit(error_msg)
+            self.connection_status_changed.emit("DISCONNECTED")
+            self.reconnect()
+
+    @handle_errors
+    def execute_command(self, cmd_path, params=None):
+        if self.connection:
+            path = self.connection.path(cmd_path)
+            return path(**params) if params else path()
+        raise ConnectionError("Not connected to device")
+
+    def close(self):
+        if self.connection:
+            self.connection.close()
+            self.connected = False
+            self.heartbeat_timer.stop()
+            self.logger.info("Connection closed gracefully")
+            self.connection_status_changed.emit("DISCONNECTED")
+
+# Example usage with PyQt
+if __name__ == '__main__':
+    from PyQt5.QtWidgets import QApplication, QLabel, QVBoxLayout, QWidget
+
+    class ExampleApp(QWidget):
+        def __init__(self):
+            super().__init__()
+            self.initUI()
+            
+            self.connector = MikroTikConnectionManager(
+                host='192.168.88.1',
+                username='admin',
+                password='',
+                max_retries=5,
+                retry_interval=10
+            )
+            
+            self.connector.connection_status_changed.connect(self.update_status)
+            self.connector.connect()
+
+        def initUI(self):
+            self.setWindowTitle('MikroTik Connection Monitor')
+            self.layout = QVBoxLayout()
+            self.status_label = QLabel('Connection Status: DISCONNECTED')
+            self.layout.addWidget(self.status_label)
+            self.setLayout(self.layout)
+
+        def update_status(self, status):
+            self.status_label.setText(f'Connection Status: {status}')
+
+    app = QApplication(sys.argv)
+    ex = ExampleApp()
+    ex.show()
+    sys.exit(app.exec_())

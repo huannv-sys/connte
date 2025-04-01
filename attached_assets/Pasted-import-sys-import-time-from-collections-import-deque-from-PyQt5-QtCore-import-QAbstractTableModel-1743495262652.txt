@@ -1,0 +1,123 @@
+import sys
+import time
+from collections import deque
+from PyQt5.QtCore import QAbstractTableModel, Qt, QTimer
+from PyQt5.QtGui import QColor
+from PyQt5.QtWidgets import QApplication, QTableView, QHeaderView
+
+class InterfaceModel(QAbstractTableModel):
+    _HEADERS = ['Interface', 'Status', 'RX Rate', 'TX Rate', 'IP Address', 'MAC', 'MTU']
+    _STATIC_COLS = [0, 4, 5, 6]  # Các cột dữ liệu tĩnh
+    _DYNAMIC_COLS = [1, 2, 3]    # Các cột cần cập nhật real-time
+
+    def __init__(self):
+        super().__init__()
+        self._data = []  # Format: [{'name': 'ether1', 'status': 'up', ...}, ...]
+        self._static_data = {}  # Cache dữ liệu tĩnh
+        self.update_queue = deque(maxlen=10)  # Hàng đợi batch update
+
+    def rowCount(self, parent=None):
+        return len(self._data)
+
+    def columnCount(self, parent=None):
+        return len(self._HEADERS)
+
+    def data(self, index, role=Qt.DisplayRole):
+        if not index.isValid():
+            return None
+
+        row = index.row()
+        col = index.column()
+        item = self._data[row]
+
+        if role == Qt.DisplayRole:
+            if col == 0: return item['name']
+            if col == 1: return item['status']
+            if col == 2: return item['rx_rate']
+            if col == 3: return item['tx_rate']
+            if col == 4: return item.get('ip', 'N/A')
+            if col == 5: return item.get('mac', 'N/A')
+            if col == 6: return item.get('mtu', 'N/A')
+
+        if role == Qt.BackgroundRole and col == 1:
+            return QColor('#4CAF50') if item['status'] == 'up' else QColor('#F44336')
+
+        return None
+
+    def headerData(self, section, orientation, role):
+        if role == Qt.DisplayRole and orientation == Qt.Horizontal:
+            return self._HEADERS[section]
+
+    def batch_update(self, updates):
+        """Xử lý cập nhật theo batch"""
+        now = time.time()
+        
+        # Tách dữ liệu tĩnh nếu chưa có
+        for update in updates:
+            if update['name'] not in self._static_data:
+                self._static_data[update['name']] = {
+                    'ip': update.get('ip'),
+                    'mac': update.get('mac'),
+                    'mtu': update.get('mtu')
+                }
+
+        # Merge dữ liệu
+        for row_idx, item in enumerate(self._data):
+            for update in updates:
+                if item['name'] == update['name']:
+                    self._data[row_idx].update({
+                        'status': update['status'],
+                        'rx_rate': update['rx_rate'],
+                        'tx_rate': update['tx_rate']
+                    })
+                    break
+
+        # Chỉ cập nhật các cột dynamic
+        top_left = self.index(0, min(self._DYNAMIC_COLS))
+        bottom_right = self.index(self.rowCount()-1, max(self._DYNAMIC_COLS))
+        self.dataChanged.emit(top_left, bottom_right, [Qt.DisplayRole])
+
+class OptimizedMonitor(QTableView):
+    def __init__(self):
+        super().__init__()
+        self.model = InterfaceModel()
+        self.setModel(self.model)
+        
+        # Tối ưu hiển thị
+        self.setSelectionMode(QTableView.NoSelection)
+        self.setAlternatingRowColors(True)
+        self.verticalHeader().setVisible(False)
+        self.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        
+        # Batch update timer
+        self.update_timer = QTimer()
+        self.update_timer.setInterval(500)  # Cập nhật mỗi 500ms
+        self.update_timer.timeout.connect(self.process_updates)
+        self.update_timer.start()
+
+    def process_updates(self):
+        if self.model.update_queue:
+            self.model.batch_update(list(self.model.update_queue))
+            self.model.update_queue.clear()
+
+# Trong class MikroTikMonitorThread:
+def run(self):
+    # ... (phần kết nối API)
+    
+    # Thêm dữ liệu tĩnh 1 lần duy nhất
+    static_info = api('/interface/print')
+    for intf in static_info:
+        self.static_data[intf['.id']] = {
+            'ip': intf.get('address', 'N/A'),
+            'mac': intf.get('mac-address', 'N/A'),
+            'mtu': intf.get('mtu', 'N/A')
+        }
+    
+    # Trong vòng lặp nhận data:
+    self.update_signal.emit({
+        'name': intf_name,
+        'status': status,
+        'rx_rate': delta_rx,  # Đã format ở thread worker
+        'tx_rate': delta_tx,
+        **self.static_data[intf_id]  # Thêm dữ liệu tĩnh
+    })

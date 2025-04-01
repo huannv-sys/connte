@@ -1,0 +1,97 @@
+import websockets
+import asyncio
+from async_timeout import timeout
+import logging
+
+class MikroTikWebSocketManager:
+    def __init__(self, host, port, username, password):
+        self.host = host
+        self.port = port
+        self.username = username
+        self.password = password
+        self.connection = None
+        self.keepalive_task = None
+        self.reconnect_attempts = 0
+        self.max_reconnect_attempts = 5
+        self.logger = logging.getLogger('MikroTikWS')
+
+    async def connect(self):
+        try:
+            self.connection = await websockets.connect(
+                f"wss://{self.host}:{self.port}/ws",
+                ssl=True,
+                ping_interval=30,  # Gửi ping mỗi 30s
+                ping_timeout=10,
+                close_timeout=1
+            )
+            await self._login()
+            self.reconnect_attempts = 0
+            self.keepalive_task = asyncio.create_task(self._keepalive())
+            return True
+        except Exception as e:
+            self.logger.error(f"Connect error: {str(e)}")
+            return False
+
+    async def _login(self):
+        login_msg = {
+            "username": self.username,
+            "password": self.password,
+            "action": "login"
+        }
+        await self.connection.send(json.dumps(login_msg))
+        response = await self.connection.recv()
+        if "error" in response:
+            raise AuthenticationError(json.loads(response)['error'])
+
+    async def _keepalive(self):
+        while self.connection.open:
+            try:
+                async with timeout(15):
+                    # Gửi lệnh "/system/identity/getall" để giữ kết nối
+                    await self.connection.send('{"command":"/system/identity/getall"}')
+                    await self.connection.recv()
+                    await asyncio.sleep(60)  # Kiểm tra mỗi phút
+            except (asyncio.TimeoutError, websockets.exceptions.ConnectionClosed):
+                self.logger.warning("Keepalive failed, reconnecting...")
+                await self.reconnect()
+
+    async def reconnect(self):
+        if self.reconnect_attempts < self.max_reconnect_attempts:
+            self.reconnect_attempts += 1
+            await self.close()
+            await asyncio.sleep(2**self.reconnect_attempts)  # Exponential backoff
+            return await self.connect()
+        else:
+            raise MaxRetryError("Exceeded max reconnect attempts")
+
+    async def close(self):
+        if self.connection:
+            await self.connection.close()
+        if self.keepalive_task:
+            self.keepalive_task.cancel()
+
+    async def listen(self, callback):
+        while True:
+            try:
+                message = await self.connection.recv()
+                await callback(json.loads(message))
+            except websockets.exceptions.ConnectionClosed:
+                await self.reconnect()
+
+# Cách sử dụng
+async def main():
+    mikrotik_ws = MikroTikWebSocketManager(
+        host="192.168.88.1",
+        port=8729,
+        username="admin",
+        password=""
+    )
+    
+    await mikrotik_ws.connect()
+    
+    async def handle_message(msg):
+        print(f"Received: {msg}")
+    
+    await mikrotik_ws.listen(handle_message)
+
+asyncio.run(main())
