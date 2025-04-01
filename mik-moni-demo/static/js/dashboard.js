@@ -61,23 +61,30 @@ function initDashboard() {
         // Clear existing timer if any
         if (refreshTimer) {
             clearInterval(refreshTimer);
+            refreshTimer = null;
         }
         
         // Get refresh interval from settings
         const interval = getRefreshInterval();
         
-        // Chỉ bật auto-refresh nếu interval > 0 và không phải là trang đang được tắt auto-refresh
-        if (interval > 0 && !window.disableAutoRefresh) {
-            console.log(`Starting auto-refresh every ${interval/1000} seconds`);
+        // Chỉ bật auto-refresh nếu interval > 0 và không phải là trang đang được tắt auto-refresh 
+        // và socket không được kết nối (để tránh cả hai cơ chế cùng cập nhật)
+        if (interval > 0 && !window.disableAutoRefresh && (!socket || !socket.connected)) {
+            console.log(`Starting auto-refresh every ${interval/1000} seconds (socket unavailable)`);
             refreshTimer = setInterval(() => {
-                console.log('Auto-refreshing dashboard data...');
+                console.log('Auto-refreshing dashboard data via HTTP...');
                 loadDashboardData(deviceId);
             }, interval);
             
             // Add visual indicator for auto-refresh
             updateRefreshStatus(true, interval/1000);
         } else {
-            updateRefreshStatus(false);
+            if (socket && socket.connected) {
+                console.log('Using WebSocket for real-time updates instead of timer');
+                updateRefreshStatus(true, 'realtime');
+            } else {
+                updateRefreshStatus(false);
+            }
         }
     }
     
@@ -86,7 +93,13 @@ function initDashboard() {
         const refreshStatus = document.getElementById('refreshStatus');
         if (refreshStatus) {
             if (isActive) {
-                refreshStatus.innerHTML = `<span class="badge bg-success">Auto-refresh ${seconds}s <i class="bi bi-arrow-clockwise"></i></span>`;
+                let statusText = '';
+                if (seconds === 'realtime') {
+                    statusText = `<span class="badge bg-info">WebSocket <i class="bi bi-lightning"></i></span>`;
+                } else {
+                    statusText = `<span class="badge bg-success">Auto ${seconds}s <i class="bi bi-arrow-clockwise"></i></span>`;
+                }
+                refreshStatus.innerHTML = statusText;
                 refreshStatus.classList.remove('d-none');
             } else {
                 refreshStatus.classList.add('d-none');

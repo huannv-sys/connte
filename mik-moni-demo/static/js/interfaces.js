@@ -31,6 +31,19 @@ function initInterfacesPage() {
         }
     });
     
+    // Để tránh trùng lặp dữ liệu, chỉ lắng nghe một trong hai event 'network_speeds' hoặc 'interface_updates'
+    // Vì các dữ liệu bị trùng lặp gần như giống nhau, chỉ khác format chút
+    socket.on('network_speeds', function(data) {
+        console.log("Received network speed data:", data);
+        const activeDeviceId = deviceSelect?.value;
+        
+        // Chỉ cập nhật nếu dữ liệu là cho thiết bị hiện tại
+        if (activeDeviceId && data.device_id === activeDeviceId) {
+            // Không cần cập nhật ở đây vì đã xử lý bởi interface_updates
+            // updateInterfaceSpeedData(data.interfaces);
+        }
+    });
+    
     // Get device from URL parameter or use first device
     const urlParams = new URLSearchParams(window.location.search);
     const deviceId = urlParams.get('device');
