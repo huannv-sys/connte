@@ -2,6 +2,128 @@
  * Utility functions for the Mikrotik monitoring dashboard
  */
 
+// Khai báo biến lưu trạng thái đã khởi tạo Socket.IO chưa
+let socketInitialized = false;
+
+// Hàm khởi tạo sự kiện cho Socket.IO
+function setupSocketEvents(onConnectCallback) {
+    // Kiểm tra nếu socket chưa được định nghĩa (có thể do base.html chưa khởi tạo)
+    if (typeof socket === 'undefined') {
+        console.warn('Socket.IO global variable not initialized. Using default initialization.');
+        // Khởi tạo socket nếu chưa có
+        socket = io({
+            reconnection: true,
+            reconnectionAttempts: 10,
+            reconnectionDelay: 1000,
+            timeout: 20000,
+            transports: ['websocket', 'polling'],
+            autoConnect: true
+        });
+    }
+    
+    // Xử lý sự kiện khi kết nối thành công
+    socket.on('connect', function() {
+        console.log('Connected to WebSocket server');
+        
+        // Cập nhật trạng thái kết nối UI nếu có updateSocketStatus
+        if (typeof updateSocketStatus === 'function') {
+            updateSocketStatus(true);
+        } else {
+            // Hiển thị trạng thái kết nối trong console
+            const statusElement = document.getElementById('socketStatus');
+            if (statusElement) {
+                statusElement.className = 'connection-status online me-2';
+                statusElement.innerHTML = '<span class="status-dot"></span><span class="status-text">Online</span>';
+            }
+        }
+        
+        // Gọi callback nếu được cung cấp
+        if (typeof onConnectCallback === 'function') {
+            onConnectCallback();
+        }
+        
+        // Phát sự kiện cho các component khác biết là đã kết nối lại
+        console.log('WebSocket reconnected, refreshing interfaces data...');
+        $(document).trigger('socket_reconnected');
+        console.log('Triggered socket_reconnected event');
+    });
+    
+    // Xử lý sự kiện khi ngắt kết nối
+    socket.on('disconnect', function(reason) {
+        console.log('Disconnected from WebSocket server:', reason);
+        
+        // Cập nhật trạng thái kết nối UI
+        if (typeof updateSocketStatus === 'function') {
+            updateSocketStatus(false);
+        } else {
+            // Hiển thị trạng thái kết nối trong console
+            const statusElement = document.getElementById('socketStatus');
+            if (statusElement) {
+                statusElement.className = 'connection-status offline me-2';
+                statusElement.innerHTML = '<span class="status-dot"></span><span class="status-text">Offline</span>';
+            }
+        }
+    });
+    
+    // Xử lý sự kiện khi có lỗi
+    socket.on('error', function(error) {
+        console.error('WebSocket error:', error);
+    });
+    
+    // Xử lý sự kiện khi đang thử kết nối lại
+    socket.on('reconnecting', function(attemptNumber) {
+        console.log(`Attempting to reconnect (${attemptNumber})...`);
+    });
+    
+    // Xử lý sự kiện khi kết nối lại thành công
+    socket.on('reconnect', function(attemptNumber) {
+        console.log(`Reconnected after ${attemptNumber} attempts`);
+    });
+    
+    // Xử lý các sự kiện nhận dữ liệu từ server
+    socket.on('network_speeds', function(data) {
+        console.log('Received network speed data:', data);
+        // Xử lý dữ liệu tốc độ mạng (sẽ được xử lý ở các file JS khác)
+    });
+    
+    socket.on('interface_updates', function(data) {
+        console.log('Received interface updates via WebSocket');
+        // Xử lý dữ liệu cập nhật interface (sẽ được xử lý ở các file JS khác)
+    });
+    
+    socket.on('system_data', function(data) {
+        console.log('Received system data via WebSocket');
+        // Xử lý dữ liệu hệ thống (sẽ được xử lý ở các file JS khác)
+    });
+    
+    socket.on('logs_data', function(data) {
+        console.log('Received logs data via WebSocket');
+        // Xử lý dữ liệu logs (sẽ được xử lý ở logs.js)
+    });
+    
+    socket.on('alerts_data', function(data) {
+        console.log('Received alerts data via WebSocket');
+        // Xử lý dữ liệu cảnh báo (sẽ được xử lý ở các file JS khác)
+    });
+    
+    // Đánh dấu đã khởi tạo xong
+    socketInitialized = true;
+}
+
+// Khởi tạo WebSocket connection để tương thích với mã cũ
+function connectWebSocket(onConnectCallback) {
+    // Kiểm tra nếu đã khởi tạo rồi thì không cần làm lại
+    if (socketInitialized) {
+        if (typeof onConnectCallback === 'function') {
+            onConnectCallback();
+        }
+        return;
+    }
+    
+    // Khởi tạo các sự kiện socket nếu chưa được khởi tạo
+    setupSocketEvents(onConnectCallback);
+}
+
 // Format bytes to human-readable string (private implementation)
 function _formatBytes(bytes, decimals = 2) {
     if (bytes === 0) return '0 Bytes';
