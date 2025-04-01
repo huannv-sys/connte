@@ -128,6 +128,8 @@
     
     // Lắng nghe sự kiện cập nhật tốc độ mạng từ WebSocket
     $(document).on('network_speeds_updated', function(event, data) {
+        console.log("Cập nhật dữ liệu giao diện từ network_speeds event:", data);
+        
         // Hiển thị thông tin tốc độ mạng chỉ khi thiết bị hiện đang được chọn
         const currentDeviceId = $('#deviceSelect').val();
         
@@ -146,9 +148,11 @@
                     const txSpeedCell = $(`#tx_speed_${iface.name}`);
                     
                     if (rxSpeedCell.length > 0) {
+                        console.log(`Cập nhật tốc độ cho interface ${iface.name}: RX=${iface.rx_speed}, TX=${iface.tx_speed}`);
+                        
                         // Định dạng tốc độ thành KB/s hoặc MB/s
-                        const rxFormatted = formatDataRate(iface.rx_speed);
-                        const txFormatted = formatDataRate(iface.tx_speed);
+                        const rxFormatted = formatSpeed(iface.rx_speed);
+                        const txFormatted = formatSpeed(iface.tx_speed);
                         
                         // Khởi tạo giá trị trước đó nếu chưa có
                         if (!previousValues[iface.name]) {
