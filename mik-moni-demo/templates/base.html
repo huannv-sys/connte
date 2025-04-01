@@ -65,6 +65,11 @@
                         <label class="form-check-label small" for="highPrecisionMode">Chế độ chính xác cao</label>
                     </div>
                     
+                    <!-- Nút tắt chế độ tự động làm mới -->
+                    <button id="toggleAutoRefresh" type="button" class="btn btn-sm btn-outline-primary me-2">
+                        <i class="bi bi-arrow-repeat"></i> Tắt tự động làm mới
+                    </button>
+                    
                     <div id="refreshStatus" class="me-2 d-none"></div>
                     
                     <button class="btn btn-sm btn-outline-light refresh-btn">
@@ -333,8 +338,52 @@
             });
         }
         
+        // Nút tắt/bật tự động làm mới
+        function setupToggleAutoRefresh() {
+            const toggleButton = document.getElementById('toggleAutoRefresh');
+            if (toggleButton) {
+                // Set initial state
+                window.disableAutoRefresh = localStorage.getItem('disableAutoRefresh') === 'true';
+                updateToggleButtonText();
+                
+                toggleButton.addEventListener('click', function() {
+                    // Toggle the state
+                    window.disableAutoRefresh = !window.disableAutoRefresh;
+                    // Store the preference
+                    localStorage.setItem('disableAutoRefresh', window.disableAutoRefresh);
+                    // Update the button text
+                    updateToggleButtonText();
+                    
+                    // Notify any active page
+                    const event = new CustomEvent('autoRefreshToggled', {
+                        detail: {
+                            disableAutoRefresh: window.disableAutoRefresh
+                        }
+                    });
+                    document.dispatchEvent(event);
+                });
+            }
+            
+            function updateToggleButtonText() {
+                if (!toggleButton) return;
+                
+                if (window.disableAutoRefresh) {
+                    toggleButton.innerHTML = '<i class="bi bi-arrow-repeat"></i> Bật tự động làm mới';
+                    toggleButton.classList.remove('btn-outline-primary');
+                    toggleButton.classList.add('btn-outline-secondary');
+                } else {
+                    toggleButton.innerHTML = '<i class="bi bi-arrow-repeat"></i> Tắt tự động làm mới';
+                    toggleButton.classList.remove('btn-outline-secondary');
+                    toggleButton.classList.add('btn-outline-primary');
+                }
+            }
+        }
+
         // Khởi tạo socket và thiết lập kết nối
         initSocket();
+        
+        // Thiết lập nút tắt/bật tự động làm mới
+        setupToggleAutoRefresh();
         
         // Lắng nghe sự kiện kết nối
         socket.on('connect', function() {

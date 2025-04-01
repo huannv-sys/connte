@@ -63,9 +63,11 @@ function initDashboard() {
             clearInterval(refreshTimer);
         }
         
-        // Set new timer
+        // Get refresh interval from settings
         const interval = getRefreshInterval();
-        if (interval > 0) {
+        
+        // Chỉ bật auto-refresh nếu interval > 0 và không phải là trang đang được tắt auto-refresh
+        if (interval > 0 && !window.disableAutoRefresh) {
             console.log(`Starting auto-refresh every ${interval/1000} seconds`);
             refreshTimer = setInterval(() => {
                 console.log('Auto-refreshing dashboard data...');
@@ -166,6 +168,28 @@ function initDashboard() {
                 loadDashboardData(deviceId);
                 startAutoRefresh(deviceId);
                 console.log('Auto-refresh resumed (page visible)');
+            }
+        }
+    });
+    
+    // Listen for auto-refresh toggle events
+    document.addEventListener('autoRefreshToggled', function(event) {
+        console.log('Auto-refresh toggle event received:', event.detail);
+        const deviceId = deviceSelect.value;
+        if (deviceId) {
+            if (event.detail.disableAutoRefresh) {
+                // Auto-refresh disabled
+                if (refreshTimer) {
+                    clearInterval(refreshTimer);
+                    refreshTimer = null;
+                    console.log('Auto-refresh disabled by user');
+                    updateRefreshStatus(false);
+                }
+            } else {
+                // Auto-refresh enabled
+                loadDashboardData(deviceId);
+                startAutoRefresh(deviceId);
+                console.log('Auto-refresh enabled by user');
             }
         }
     });
