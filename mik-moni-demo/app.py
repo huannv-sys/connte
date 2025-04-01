@@ -286,7 +286,8 @@ def handle_get_logs(data):
         socketio.emit('logs_data', {
             'device_id': device_id,
             'logs': [],
-            'error': 'Device not found'
+            'error': 'Device not found',
+            'requestId': data.get('requestId')
         })
         return
     
@@ -304,26 +305,135 @@ def handle_get_logs(data):
                 })
             
             # Gửi dữ liệu logs về client
-            socketio.emit('logs_data', {
+            response_data = {
                 'device_id': device_id,
                 'logs': log_data
-            })
+            }
+            
+            # Thêm requestId vào response nếu có
+            request_id = data.get('requestId')
+            if request_id:
+                response_data['requestId'] = request_id
+                
+            socketio.emit('logs_data', response_data)
             logger.info(f"Sent {len(log_data)} logs for device {DataStore.devices[device_id].name} via WebSocket")
         else:
             # Không có logs nào cho thiết bị này
             logger.warning(f"No logs available for device: {device_id}")
-            socketio.emit('logs_data', {
+            warning_response = {
                 'device_id': device_id,
                 'logs': [],
                 'warning': 'No logs available'
-            })
+            }
+            
+            # Thêm requestId vào response nếu có
+            request_id = data.get('requestId')
+            if request_id:
+                warning_response['requestId'] = request_id
+                
+            socketio.emit('logs_data', warning_response)
     except Exception as e:
         logger.error(f"Error sending logs via WebSocket: {str(e)}")
-        socketio.emit('logs_data', {
+        error_response = {
             'device_id': device_id,
             'logs': [],
             'error': str(e)
-        })
+        }
+        
+        # Thêm requestId vào response nếu có
+        request_id = data.get('requestId')
+        if request_id:
+            error_response['requestId'] = request_id
+            
+        socketio.emit('logs_data', error_response)
+
+# Thêm các event handler cho API WebSocket
+@socketio.on('get_system_history')
+def handle_get_system_history(data):
+    """Xử lý khi client yêu cầu lịch sử hệ thống qua WebSocket"""
+    device_id = data.get('device_id')
+    request_id = data.get('requestId')
+    
+    if device_id and device_id in DataStore.system_history:
+        history_data = []
+        for entry in DataStore.system_history[device_id]:
+            history_data.append({
+                'timestamp': entry['timestamp'].isoformat(),
+                'cpu_load': entry['cpu_load'],
+                'free_memory': entry['free_memory'],
+                'total_memory': entry['total_memory'],
+                'free_hdd': entry['free_hdd'],
+                'total_hdd': entry['total_hdd']
+            })
+        
+        response_data = {
+            'device_id': device_id,
+            'history': history_data
+        }
+        
+        # Thêm requestId vào response nếu có
+        if request_id:
+            response_data['requestId'] = request_id
+            
+        socketio.emit('system_history', response_data)
+    else:
+        error_response = {
+            'device_id': device_id,
+            'error': 'System history data not available'
+        }
+        
+        # Thêm requestId vào response nếu có
+        if request_id:
+            error_response['requestId'] = request_id
+            
+        socketio.emit('system_history', error_response)
+
+
+@socketio.on('get_interface_history')
+def handle_get_interface_history(data):
+    """Xử lý khi client yêu cầu lịch sử interface qua WebSocket"""
+    device_id = data.get('device_id')
+    interface_name = data.get('interface_name')
+    request_id = data.get('requestId')
+    
+    if (device_id and interface_name and 
+        device_id in DataStore.interface_history and 
+        interface_name in DataStore.interface_history[device_id]):
+        
+        history_data = []
+        for entry in DataStore.interface_history[device_id][interface_name]:
+            history_data.append({
+                'timestamp': entry['timestamp'].isoformat(),
+                'rx_byte': entry['rx_byte'],
+                'tx_byte': entry['tx_byte'],
+                'rx_speed': entry.get('rx_speed', 0),
+                'tx_speed': entry.get('tx_speed', 0)
+            })
+        
+        response_data = {
+            'device_id': device_id,
+            'interface_name': interface_name,
+            'history': history_data
+        }
+        
+        # Thêm requestId vào response nếu có
+        if request_id:
+            response_data['requestId'] = request_id
+            
+        socketio.emit('interface_history', response_data)
+    else:
+        error_response = {
+            'device_id': device_id,
+            'interface_name': interface_name,
+            'error': 'Interface history data not available'
+        }
+        
+        # Thêm requestId vào response nếu có
+        if request_id:
+            error_response['requestId'] = request_id
+            
+        socketio.emit('interface_history', error_response)
+
 
 # Khởi tạo dữ liệu và bắt đầu lập lịch thu thập
 with app.app_context():
