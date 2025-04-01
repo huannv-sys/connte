@@ -611,13 +611,54 @@ class MikrotikAPI:
         
         api = self.get_api(device_id)
         if not api:
+            logger.error(f"Cannot collect wireless clients: No API connection for device {device_id}")
             return None
         
         try:
-            resource = api.get_resource('/interface/wireless/registration-table')
-            clients_data = resource.get()
+            # Try multiple paths to get wireless clients
+            clients_data = []
+            success = False
+            
+            # Phương pháp 1: Sử dụng đường dẫn tiêu chuẩn
+            try:
+                logger.debug(f"Trying to get wireless clients using standard path for {device_id}")
+                resource = api.get_resource('/interface/wireless/registration-table')
+                clients_data = resource.get()
+                logger.debug(f"Successfully got {len(clients_data)} wireless clients")
+                success = True
+            except Exception as method1_error:
+                logger.debug(f"Method 1 for wireless clients failed: {str(method1_error)}")
+                
+                # Phương pháp 2: Thử dùng binary command
+                try:
+                    logger.debug(f"Trying method 2 with binary command for wireless clients on {device_id}")
+                    clients_data = api.get_binary_resource('/').call('interface/wireless/registration-table/print')
+                    logger.debug(f"Successfully got {len(clients_data)} wireless clients via method 2")
+                    success = True
+                except Exception as method2_error:
+                    logger.debug(f"Method 2 for wireless clients failed: {str(method2_error)}")
+                    
+                    # Phương pháp 3: Kiểm tra xem thiết bị có hỗ trợ wireless không
+                    try:
+                        logger.debug(f"Checking if device {device_id} supports wireless")
+                        wireless_interfaces = api.get_resource('/interface/wireless').get()
+                        
+                        if wireless_interfaces:
+                            wireless_names = [iface.get('name', '') for iface in wireless_interfaces]
+                            logger.info(f"Device has wireless interfaces: {', '.join(wireless_names)}, but no clients connected")
+                        else:
+                            logger.info(f"Device {device_id} does not have wireless interfaces configured")
+                    except Exception as check_error:
+                        logger.info(f"Device {device_id} likely does not support wireless: {str(check_error)}")
+            
+            # Nếu không có dữ liệu, trả về danh sách trống
+            if not clients_data:
+                logger.info(f"No wireless clients found on device {device_id}")
+                DataStore.wireless_clients[device_id] = []
+                return []
             
             clients = []
+            logger.debug(f"Processing {len(clients_data)} wireless clients from device {device_id}")
             for client_data in clients_data:
                 mac_address = client_data.get('mac-address', '')
                 # Tìm thông tin nhà sản xuất từ MAC address
@@ -660,20 +701,51 @@ class MikrotikAPI:
         
         api = self.get_api(device_id)
         if not api:
+            logger.error(f"Cannot collect CAPsMAN registrations: No API connection for device {device_id}")
             return None
         
         try:
-            # Try to get CAPsMAN registrations - this may not be available on all devices
+            # Try multiple paths to get CAPsMAN registrations
+            registrations_data = []
+            
+            # Phương pháp 1: Sử dụng '/caps-man/registration-table'
             try:
+                logger.debug(f"Trying to get CAPsMAN registrations using '/caps-man/registration-table' path for {device_id}")
                 resource = api.get_resource('/caps-man/registration-table')
                 registrations_data = resource.get()
-            except RouterOsApiError:
-                # CAPsMAN might not be enabled on this device
-                logger.info(f"CAPsMAN not available on device {device_id}")
+                logger.debug(f"Successfully got {len(registrations_data)} CAPsMAN registrations via method 1")
+            except Exception as method1_error:
+                logger.debug(f"Method 1 for CAPsMAN registrations failed: {str(method1_error)}")
+                
+                # Phương pháp 2: Sử dụng lệnh binary trực tiếp
+                try:
+                    logger.debug(f"Trying method 2 with direct binary command for CAPsMAN registrations on {device_id}")
+                    registrations_data = api.get_binary_resource('/').call('caps-man/registration-table/print')
+                    logger.debug(f"Successfully got {len(registrations_data)} CAPsMAN registrations via method 2")
+                except Exception as method2_error:
+                    logger.debug(f"Method 2 for CAPsMAN registrations failed: {str(method2_error)}")
+                    
+                    # Phương pháp 3: Kiểm tra xem CAPsMAN có được bật không
+                    try:
+                        logger.debug(f"Checking if CAPsMAN is enabled on device {device_id}")
+                        caps_man_config = api.get_resource('/caps-man/interface')
+                        caps_man_enabled = caps_man_config.get()
+                        
+                        if caps_man_enabled:
+                            logger.info(f"CAPsMAN is enabled but no registrations found on device {device_id}")
+                        else:
+                            logger.info(f"CAPsMAN is likely not enabled on device {device_id}")
+                    except Exception as check_error:
+                        logger.info(f"CAPsMAN not available on device {device_id}: {str(check_error)}")
+            
+            # Nếu không có dữ liệu, trả về danh sách trống
+            if not registrations_data:
+                logger.info(f"No CAPsMAN registrations found on device {device_id}")
                 DataStore.capsman_registrations[device_id] = []
                 return []
             
             registrations = []
+            logger.debug(f"Processing {len(registrations_data)} CAPsMAN registrations from device {device_id}")
             for reg_data in registrations_data:
                 mac_address = reg_data.get('mac-address', '')
                 remote_ap_mac = reg_data.get('remote-cap-mac', '')
@@ -890,28 +962,60 @@ class MikrotikAPI:
                         # Thử tạo log bằng script
                         script_resource = api.get_resource('/system/script')
                         
-                        # Kiểm tra và xóa kịch bản nếu đã tồn tại
-                        existing_scripts = script_resource.get()
-                        if existing_scripts:
+                        # Thử tạo log trực tiếp đầu tiên thay vì sử dụng script
+                        try:
+                            logger.info(f"Trying to generate logs directly with /log command on device {device_id}")
+                            api.get_binary_resource('/').call('log/info', {'message': 'Test log message from monitoring system'})
+                            logger.info(f"Successfully generated log directly on device {device_id}")
+                        except Exception as direct_log_err:
+                            logger.error(f"Failed to generate log directly: {str(direct_log_err)}")
+                            
+                            # Nếu không thành công, kiểm tra và sử dụng script hiện có
+                            existing_scripts = script_resource.get()
+                            script_exists = False
+                            script_id = None
+                            
+                            # Tìm script đã tồn tại
                             for script in existing_scripts:
                                 if 'name' in script and script['name'] == 'generate_log':
+                                    script_exists = True
                                     script_id = script.get('.id')
-                                    if script_id:
-                                        try:
-                                            script_resource.remove(id=script_id)
-                                        except Exception as remove_error:
-                                            logger.error(f"Error removing existing script: {str(remove_error)}")
-                        
-                        # Tạo kịch bản mới
-                        script_resource.add(
-                            name="generate_log",
-                            source=":log info \"Log test message from monitoring system\";"
-                        )
-                        
-                        # Chạy kịch bản
-                        script_resource.call("run", {"number": "generate_log"})
-                        
-                        logger.info(f"Generated log events using script on device {device_id}")
+                                    break
+                                    
+                            if script_exists and script_id:
+                                # Script đã tồn tại, chạy nó
+                                try:
+                                    logger.info(f"Found existing script with ID {script_id}, trying to run it")
+                                    # Sử dụng đúng định dạng tham số để chạy script
+                                    api.get_binary_resource('/system/script').call('run', {'id': script_id})
+                                    logger.info(f"Successfully ran existing script on device {device_id}")
+                                except Exception as run_err:
+                                    logger.error(f"Failed to run existing script by ID: {str(run_err)}")
+                                    
+                                    # Thử một cách khác
+                                    try:
+                                        logger.info(f"Trying alternative way to run script")
+                                        api.get_binary_resource('/system/script').call('run', {'number': 'generate_log'})
+                                        logger.info(f"Successfully ran script by name on device {device_id}")
+                                    except Exception as alt_run_err:
+                                        logger.error(f"Failed to run script by name: {str(alt_run_err)}")
+                            elif not script_exists:
+                                # Nếu script không tồn tại, tạo mới
+                                try:
+                                    logger.info(f"Script doesn't exist, creating new one")
+                                    script_resource.add(
+                                        name="generate_log",
+                                        source=":log info \"Log test message from monitoring system\";"
+                                    )
+                                    logger.info(f"Created new script on device {device_id}")
+                                    
+                                    # Chạy script mới
+                                    api.get_binary_resource('/system/script').call('run', {'number': 'generate_log'})
+                                    logger.info(f"Successfully ran new script on device {device_id}")
+                                except Exception as create_err:
+                                    logger.error(f"Error creating or running new script: {str(create_err)}")
+                        except Exception as log_gen_err:
+                            logger.error(f"Error in log generation process: {str(log_gen_err)}")
                     except Exception as script_error:
                         logger.error(f"Failed to generate log events via script: {str(script_error)}")
                         

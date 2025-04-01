@@ -732,6 +732,42 @@ function updateInterfaceSpeedData(interfaces) {
     });
 }
 
+// Update active device
+function updateActiveDevice(deviceId) {
+    if (!deviceId) return;
+    
+    // Update deviceSelect if it exists
+    const deviceSelect = document.getElementById('deviceSelect');
+    if (deviceSelect && deviceSelect.value !== deviceId) {
+        deviceSelect.value = deviceId;
+    }
+    
+    // Load all interface data for new device
+    loadPageData(deviceId);
+    
+    // Update URL with new device ID
+    updatePageUrl(deviceId);
+    
+    // Connect to device room via WebSocket
+    if (socket && socket.connected) {
+        // First disconnect from any existing rooms
+        socket.emit('leave_device_room');
+        
+        // Join new device room
+        socket.emit('join_device_room', { device_id: deviceId });
+        console.log(`Joined WebSocket room for device: ${deviceId}`);
+    }
+}
+
+// Update page URL with device ID
+function updatePageUrl(deviceId) {
+    if (!deviceId) return;
+    
+    const url = new URL(window.location.href);
+    url.searchParams.set('device', deviceId);
+    window.history.replaceState({}, '', url.toString());
+}
+
 // Load page data
 function loadPageData(deviceId) {
     if (!deviceId) return;
