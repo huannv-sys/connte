@@ -140,7 +140,34 @@ class MikrotikAPI:
     def get_api(self, device_id: str) -> Optional[Any]:
         """Get the API connection for a device"""
         if device_id in self.connections:
-            return self.connections[device_id]['api']
+            api = self.connections[device_id]['api']
+            
+            # Kiểm tra xem kết nối có còn hoạt động
+            try:
+                # Thử thực hiện một lệnh đơn giản để kiểm tra kết nối
+                resource = api.get_resource('/system/identity')
+                # Chỉ get() không thực sự gọi đến router, cần thực hiện một truy vấn thực tế
+                resource.get()
+                logger.debug(f"Connection to device {device_id} is working")
+                return api
+            except Exception as e:
+                # Nếu có lỗi, đặc biệt là Bad file descriptor, kết nối đã bị đứt
+                logger.warning(f"Existing connection to device {device_id} is broken: {e}")
+                # Ngắt kết nối cũ
+                self.disconnect(device_id)
+                # Thử tạo kết nối mới
+                try:
+                    device = DataStore.devices.get(device_id)
+                    if device:
+                        success, _ = self.connect(device)
+                        if success:
+                            logger.info(f"Successfully reconnected to device {device_id}")
+                            return self.connections[device_id]['api']
+                        else:
+                            logger.error(f"Failed to reconnect to device {device_id}")
+                except Exception as reconnect_error:
+                    logger.error(f"Error during reconnection to device {device_id}: {reconnect_error}")
+                return None
         return None
     
     def collect_system_resources(self, device_id: str) -> Optional[SystemResources]:
@@ -999,6 +1026,28 @@ class MikrotikAPI:
                 "success": False,
                 "error": "Device not found or disabled"
             }
+        
+        # Kiểm tra kết nối hiện tại và thử kết nối lại nếu cần
+        if device_id in self.connections:
+            try:
+                # Kiểm tra xem kết nối có hoạt động không
+                api = self.connections[device_id]['api']
+                try:
+                    # Thử thực hiện một lệnh đơn giản để kiểm tra kết nối
+                    identity = api.get_resource('/system/identity')
+                    identity.get()
+                    logger.debug(f"Existing connection to {device_id} is working")
+                except Exception as e:
+                    # Kết nối không còn hoạt động, ngắt kết nối và chuẩn bị kết nối lại
+                    logger.warning(f"Existing connection to {device_id} is broken ({e}), reconnecting...")
+                    self.disconnect(device_id)
+            except Exception as conn_error:
+                # Lỗi khi truy cập connection, ngắt kết nối và chuẩn bị kết nối lại
+                logger.warning(f"Error accessing connection for {device_id}: {conn_error}, reconnecting...")
+                try:
+                    self.disconnect(device_id)  
+                except Exception as disc_error:
+                    logger.error(f"Error during disconnection of {device_id}: {disc_error}")
         
         # Try to connect if not already connected
         if device_id not in self.connections:
