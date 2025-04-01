@@ -1,0 +1,136 @@
+import sys
+import librouteros
+from PyQt5.QtCore import QThread, pyqtSignal, Qt
+from PyQt5.QtGui import QColor
+from PyQt5.QtWidgets import QApplication, QMainWindow, QTableWidget, QTableWidgetItem, QHeaderView
+
+class MikroTikMonitorThread(QThread):
+    update_signal = pyqtSignal(dict)
+    error_signal = pyqtSignal(str)
+
+    def __init__(self, host, username, password):
+        super().__init__()
+        self.host = host
+        self.username = username
+        self.password = password
+        self.running = True
+        self.previous_stats = {}
+
+    def format_rate(self, rate_bps):
+        if rate_bps >= 1e9:
+            return f"{rate_bps / 1e9:.2f} Gbps"
+        elif rate_bps >= 1e6:
+            return f"{rate_bps / 1e6:.2f} Mbps"
+        elif rate_bps >= 1e3:
+            return f"{rate_bps / 1e3:.2f} Kbps"
+        else:
+            return f"{rate_bps} bps"
+
+    def run(self):
+        try:
+            api = librouteros.connect(
+                host=self.host,
+                username=self.username,
+                password=self.password,
+                port=8729,
+                ssl=True
+            )
+            
+            interfaces = api('/interface/print')
+            interface_ids = [intf['.id'] for intf in interfaces]
+            interface_names = {intf['.id']: intf['name'] for intf in interfaces}
+            
+            params = {'numbers': ','.join(interface_ids), 'interval': '1'}
+            monitor = api.path('/interface/monitor')
+            monitor = monitor(**params)
+            
+            for update in monitor:
+                if not self.running:
+                    break
+                
+                intf_id = update.get('.id')
+                intf_name = interface_names.get(intf_id, 'Unknown')
+                
+                rx_bytes = int(update.get('rx-byte', 0))
+                tx_bytes = int(update.get('tx-byte', 0))
+                status = update.get('status', 'down')
+                
+                prev = self.previous_stats.get(intf_id, {'rx': 0, 'tx': 0})
+                delta_rx = (rx_bytes - prev['rx']) * 8  # Convert to bits
+                delta_tx = (tx_bytes - prev['tx']) * 8
+                
+                self.previous_stats[intf_id] = {'rx': rx_bytes, 'tx': tx_bytes}
+                
+                self.update_signal.emit({
+                    'interface': intf_name,
+                    'status': status,
+                    'rx_rate': self.format_rate(delta_rx),
+                    'tx_rate': self.format_rate(delta_tx)
+                })
+                
+        except Exception as e:
+            self.error_signal.emit(str(e))
+        finally:
+            if 'api' in locals():
+                api.close()
+
+    def stop(self):
+        self.running = False
+
+class MainWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("MikroTik Interface Monitor")
+        self.setGeometry(100, 100, 800, 600)
+        
+        self.table = QTableWidget()
+        self.table.setColumnCount(4)
+        self.table.setHorizontalHeaderLabels(['Interface', 'Status', 'RX Rate', 'TX Rate'])
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.setCentralWidget(self.table)
+        
+        self.interface_rows = {}
+
+    def update_interface(self, data):
+        intf_name = data['interface']
+        if intf_name not in self.interface_rows:
+            row = self.table.rowCount()
+            self.table.insertRow(row)
+            self.interface_rows[intf_name] = row
+            self.table.setItem(row, 0, QTableWidgetItem(intf_name))
+            
+        row = self.interface_rows[intf_name]
+        
+        # Update Status with color
+        status_item = QTableWidgetItem(data['status'].upper())
+        status_item.setTextAlignment(Qt.AlignCenter)
+        status_item.setBackground(QColor('#4CAF50') if data['status'] == 'up' else QColor('#F44336'))
+        self.table.setItem(row, 1, status_item)
+        
+        # Update Rates
+        self.table.setItem(row, 2, QTableWidgetItem(data['rx_rate']))
+        self.table.setItem(row, 3, QTableWidgetItem(data['tx_rate']))
+
+def main():
+    app = QApplication(sys.argv)
+    window = MainWindow()
+    
+    # Thay đổi thông tin kết nối tại đây
+    monitor_thread = MikroTikMonitorThread(
+        host='192.168.88.1',
+        username='admin',
+        password=''
+    )
+    
+    monitor_thread.update_signal.connect(window.update_interface)
+    monitor_thread.error_signal.connect(lambda msg: print(f"Error: {msg}"))
+    monitor_thread.start()
+    
+    window.show()
+    ret = app.exec_()
+    monitor_thread.stop()
+    monitor_thread.wait()
+    sys.exit(ret)
+
+if __name__ == '__main__':
+    main()
