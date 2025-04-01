@@ -24,7 +24,7 @@
       "comment": "test"
     }
   ],
-  "refresh_interval": 60,
+  "refresh_interval": 1,
   "interface_history_points": 288,
   "system_history_points": 288,
   "thresholds": {
@@ -33,7 +33,7 @@
     "disk_usage": 80,
     "interface_usage": 80
   },
-  "use_ssl": true,
+  "use_ssl": false,
   "connection_timeout": 10,
   "connection_retries": 2,
   "retry_delay": 1

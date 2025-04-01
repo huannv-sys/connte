@@ -15,4 +15,4 @@ from app import app, socketio
 if __name__ == "__main__":
     print("Khởi động ứng dụng Mikrotik Monitoring...")
     print(f"Ứng dụng sẽ chạy tại: http://0.0.0.0:5001")
-    socketio.run(app, host="0.0.0.0", port=5001, debug=True, allow_unsafe_werkzeug=True, use_reloader=True, log_output=True)
+    socketio.run(app, host="0.0.0.0", port=5001, debug=True, allow_unsafe_werkzeug=True, use_reloader=False, log_output=True)
