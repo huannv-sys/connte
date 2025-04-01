@@ -248,8 +248,16 @@
     
     <!-- WebSocket Initialization -->
     <script>
-        // Kết nối đến máy chủ Socket.IO
-        const socket = io();
+        // Biến lưu trạng thái kết nối trước đó để theo dõi reconnection
+        let previouslyConnected = false;
+        
+        // Kết nối đến máy chủ Socket.IO với các tùy chọn nâng cao
+        const socket = io({
+            reconnection: true,        // Cho phép tự động kết nối lại
+            reconnectionAttempts: 10,  // Số lần thử kết nối lại tối đa
+            reconnectionDelay: 1000,   // Khoảng thời gian giữa các lần thử kết nối lại (ms)
+            timeout: 20000             // Thời gian timeout cho kết nối (ms)
+        });
         
         // Hàm cập nhật trạng thái kết nối Socket
         function updateSocketStatus(isConnected) {
@@ -258,11 +266,19 @@
             if (isConnected) {
                 statusElement.className = 'connection-status online me-2';
                 statusElement.innerHTML = '<span class="status-dot"></span><span class="status-text">Online</span>';
+                
+                // Phát event khi kết nối lại thành công (chỉ khi trước đó là disconnected)
+                if (!previouslyConnected) {
+                    $(document).trigger('socket_reconnected');
+                    console.log('Triggered socket_reconnected event');
+                }
+                previouslyConnected = true;
             } else {
                 statusElement.className = 'connection-status offline me-2';
                 statusElement.innerHTML = '<span class="status-dot"></span><span class="status-text">Offline</span>';
+                previouslyConnected = false;
                 
-                // Tự động thử kết nối lại sau 5 giây khi mất kết nối
+                // Tự động thử kết nối lại sau 1 giây khi mất kết nối
                 setTimeout(() => {
                     if (!socket.connected) {
                         console.log('Reconnecting to WebSocket server...');
@@ -333,6 +349,12 @@
         socket.on('disconnect', function() {
             console.log('Disconnected from WebSocket server');
             updateSocketStatus(false);
+            
+            // Thêm tự động kết nối lại sau 1 giây
+            setTimeout(function() {
+                console.log('Reconnecting to WebSocket server...');
+                socket.connect();
+            }, 1000);
         });
         
         // Ban đầu, giả định là đang offline cho đến khi kết nối thành công

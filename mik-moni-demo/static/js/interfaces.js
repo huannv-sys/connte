@@ -11,6 +11,15 @@ function initInterfacesPage() {
         });
     }
     
+    // Listen for websocket reconnection events
+    $(document).on('socket_reconnected', function() {
+        console.log('WebSocket reconnected, refreshing interfaces data...');
+        const activeDeviceId = deviceSelect?.value;
+        if (activeDeviceId) {
+            loadInterfacesData(activeDeviceId);
+        }
+    });
+    
     // Get device from URL parameter or use first device
     const urlParams = new URLSearchParams(window.location.search);
     const deviceId = urlParams.get('device');

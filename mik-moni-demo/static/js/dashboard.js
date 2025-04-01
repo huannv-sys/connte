@@ -17,6 +17,15 @@ function initDashboard() {
     let refreshTimer = null;
     const defaultRefreshInterval = 60000; // 60 seconds by default
     
+    // Listen for websocket reconnection events
+    $(document).on('socket_reconnected', function() {
+        console.log('WebSocket reconnected, refreshing dashboard data...');
+        const activeDeviceId = deviceSelect.value;
+        if (activeDeviceId) {
+            loadDashboardData(activeDeviceId);
+        }
+    });
+    
     // Update the active device in select dropdown and URL
     function updateActiveDevice(deviceId) {
         if (deviceId) {
