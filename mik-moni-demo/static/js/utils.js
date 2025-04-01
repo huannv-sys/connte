@@ -2,7 +2,7 @@
  * Utility functions for the Mikrotik monitoring dashboard
  */
 
-// Format bytes to human-readable string
+// Format bytes to human-readable string (private implementation)
 function _formatBytes(bytes, decimals = 2) {
     if (bytes === 0) return '0 Bytes';
     
@@ -15,7 +15,12 @@ function _formatBytes(bytes, decimals = 2) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
 
-// Format speed to human-readable string
+// Public function for formatting bytes
+function formatBytes(bytes, decimals = 2) {
+    return _formatBytes(bytes, decimals);
+}
+
+// Format speed to human-readable string (private implementation)
 function _formatSpeed(bytesPerSecond, decimals = 2) {
     if (bytesPerSecond === 0) return '0 bps';
     
@@ -31,7 +36,12 @@ function _formatSpeed(bytesPerSecond, decimals = 2) {
     return parseFloat((bitsPerSecond / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
 
-// Format uptime to human-readable string
+// Public function for formatting speed
+function formatSpeed(bytesPerSecond, decimals = 2) {
+    return _formatSpeed(bytesPerSecond, decimals);
+}
+
+// Format uptime to human-readable string (private implementation)
 function _formatUptime(uptimeString) {
     if (!uptimeString) return '';
     
@@ -61,6 +71,11 @@ function _formatUptime(uptimeString) {
     if (seconds > 0) result += `${seconds} second${seconds > 1 ? 's' : ''} `;
     
     return result.trim();
+}
+
+// Public function for formatting uptime
+function formatUptime(uptimeString) {
+    return _formatUptime(uptimeString);
 }
 
 // Format date/time
