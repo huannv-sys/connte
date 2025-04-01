@@ -196,9 +196,18 @@ function renderInterfaceTrafficCharts(historyData) {
         timestamps.push(new Date(entry.timestamp));
         txRates.push(entry.tx_speed || 0);
         rxRates.push(entry.rx_speed || 0);
-        txPacketRates.push(entry.tx_packet_rate || Math.round(Math.random() * 20)); // Fallback for demo
-        rxPacketRates.push(entry.rx_packet_rate || Math.round(Math.random() * 20)); // Fallback for demo
+        
+        // Fallback packet rates - for demo implementation
+        // Using a fixed value to estimate packet rate based on bytes
+        const bytesPerPacket = 1500; // Estimate for average ethernet packet size
+        const txPacketRate = entry.tx_speed ? Math.max(1, Math.round(entry.tx_speed / bytesPerPacket)) : 0;
+        const rxPacketRate = entry.rx_speed ? Math.max(1, Math.round(entry.rx_speed / bytesPerPacket)) : 0;
+        
+        txPacketRates.push(txPacketRate);
+        rxPacketRates.push(rxPacketRate);
     });
+    
+    console.log("Rendering TX/RX Rate Chart with data:", {timestamps, txRates, rxRates});
     
     // Render TX/RX Rate Chart
     renderTrafficRateChart('txRxRateChart', timestamps, txRates, rxRates);
@@ -210,11 +219,16 @@ function renderInterfaceTrafficCharts(historyData) {
 // Render the traffic rate chart
 function renderTrafficRateChart(containerId, timestamps, txData, rxData) {
     const container = document.getElementById(containerId);
-    if (!container) return;
+    if (!container) {
+        console.error("Container not found:", containerId);
+        return;
+    }
     
-    // Create synthetic chart representation (similar to the image)
-    const width = container.clientWidth;
-    const height = container.clientHeight;
+    console.log("Container found, size:", container.clientWidth, container.clientHeight);
+    
+    // Set a minimum size if the container is too small or has zero dimensions
+    const width = Math.max(300, container.clientWidth || 300);
+    const height = Math.max(120, container.clientHeight || 120);
     
     // Create canvas for the chart
     container.innerHTML = '';
@@ -228,23 +242,35 @@ function renderTrafficRateChart(containerId, timestamps, txData, rxData) {
     // Draw grid
     drawGrid(ctx, width, height);
     
-    // Draw TX and RX data
-    const txPoints = generatePoints(width, height, txData.length, 'tx');
-    const rxPoints = generatePoints(width, height, rxData.length, 'rx');
-    
-    // Draw the lines
-    drawLines(ctx, txPoints, 'blue');
-    drawLines(ctx, rxPoints, 'red');
+    // Use actual data if available, otherwise generate demo points
+    if (txData && txData.length > 0 && Math.max(...txData) > 0) {
+        console.log("Using actual data for charts");
+        // Draw actual TX and RX data as lines
+        drawRealDataLines(ctx, width, height, txData, 'blue');
+        drawRealDataLines(ctx, width, height, rxData, 'red');
+    } else {
+        console.log("Using generated data for charts");
+        // Draw TX and RX data using generated points
+        const txPoints = generatePoints(width, height, 20, 'tx');
+        const rxPoints = generatePoints(width, height, 20, 'rx');
+        
+        // Draw the lines
+        drawLines(ctx, txPoints, 'blue');
+        drawLines(ctx, rxPoints, 'red');
+    }
 }
 
 // Render the packet rate chart
 function renderPacketRateChart(containerId, timestamps, txData, rxData) {
     const container = document.getElementById(containerId);
-    if (!container) return;
+    if (!container) {
+        console.error("Container not found:", containerId);
+        return;
+    }
     
-    // Create synthetic chart representation (similar to the image)
-    const width = container.clientWidth;
-    const height = container.clientHeight;
+    // Set a minimum size if the container is too small or has zero dimensions
+    const width = Math.max(300, container.clientWidth || 300);
+    const height = Math.max(120, container.clientHeight || 120);
     
     // Create canvas for the chart
     container.innerHTML = '';
@@ -258,13 +284,69 @@ function renderPacketRateChart(containerId, timestamps, txData, rxData) {
     // Draw grid
     drawGrid(ctx, width, height);
     
-    // Draw TX and RX data as bars
-    const txPoints = generatePoints(width, height, txData.length, 'tx');
-    const rxPoints = generatePoints(width, height, rxData.length, 'rx');
+    // Use actual data if available, otherwise generate demo points
+    if (txData && txData.length > 0 && Math.max(...txData) > 0) {
+        // Draw actual TX and RX data as bars
+        drawRealDataBars(ctx, width, height, txData, 'blue');
+        drawRealDataBars(ctx, width, height, rxData, 'red');
+    } else {
+        // Draw TX and RX data using generated points
+        const txPoints = generatePoints(width, height, 20, 'tx');
+        const rxPoints = generatePoints(width, height, 20, 'rx');
+        
+        // Draw the bars
+        drawBars(ctx, txPoints, 'blue', width, 20);
+        drawBars(ctx, rxPoints, 'red', width, 20);
+    }
+}
+
+// Draw real data lines
+function drawRealDataLines(ctx, width, height, data, color) {
+    if (!data || data.length === 0) return;
     
-    // Draw the bars
-    drawBars(ctx, txPoints, 'blue', width, txData.length);
-    drawBars(ctx, rxPoints, 'red', width, rxData.length);
+    const maxValue = Math.max(...data, 1); // Avoid division by zero
+    const pointSpacing = width / (data.length - 1);
+    
+    ctx.strokeStyle = color === 'blue' ? '#0d6efd' : '#dc3545';
+    ctx.lineWidth = 2;
+    
+    ctx.beginPath();
+    
+    // Calculate y position - invert because canvas 0 is at top
+    const firstY = height - (data[0] / maxValue * height * 0.8);
+    ctx.moveTo(0, firstY);
+    
+    for (let i = 1; i < data.length; i++) {
+        const x = i * pointSpacing;
+        const y = height - (data[i] / maxValue * height * 0.8);
+        ctx.lineTo(x, y);
+    }
+    
+    ctx.stroke();
+}
+
+// Draw real data bars
+function drawRealDataBars(ctx, width, height, data, color) {
+    if (!data || data.length === 0) return;
+    
+    const maxValue = Math.max(...data, 1); // Avoid division by zero
+    const barWidth = Math.max(1, Math.min(10, width / (data.length * 2)));
+    const barSpacing = width / data.length;
+    
+    ctx.fillStyle = color === 'blue' ? '#0d6efd' : '#dc3545';
+    
+    for (let i = 0; i < data.length; i++) {
+        const x = i * barSpacing;
+        const normalizedValue = data[i] / maxValue;
+        const barHeight = normalizedValue * height * 0.8;
+        
+        ctx.fillRect(
+            x - barWidth / 2,
+            height - barHeight,
+            barWidth,
+            barHeight
+        );
+    }
 }
 
 // Helper function to draw grid
