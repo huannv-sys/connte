@@ -1,0 +1,18 @@
+{
+  "name": "mikrotik-monitor",
+  "version": "1.0.0",
+  "description": "Mikrotik Monitor Application",
+  "main": "index.js",
+  "scripts": {
+    "dev": "python3 run.py",
+    "build": "echo \"No build step required\"",
+    "start": "python3 run.py"
+  },
+  "keywords": [
+    "mikrotik",
+    "monitoring",
+    "network"
+  ],
+  "author": "",
+  "license": "MIT"
+}

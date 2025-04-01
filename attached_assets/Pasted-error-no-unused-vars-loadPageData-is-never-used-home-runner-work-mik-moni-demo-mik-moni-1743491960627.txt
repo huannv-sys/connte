@@ -1,0 +1,393 @@
+error[no-unused-vars]: `loadPageData` is never used
+   --> /home/runner/work/mik-moni-demo/mik-moni-demo/static/js/interfaces.js:684:10
+    | 
+684 | function loadPageData(deviceId) {
+    |          ^^^^^^^^^^^^
+    = hint: If this is intentional, prefix it with an underscore like `_loadPageData`
+
+  docs: https://lint.deno.land/rules/no-unused-vars
+
+
+error[no-unused-vars]: `loadPageData` is never used
+   --> /home/runner/work/mik-moni-demo/mik-moni-demo/static/js/ip.js:236:10
+    | 
+236 | function loadPageData(deviceId) {
+    |          ^^^^^^^^^^^^
+    = hint: If this is intentional, prefix it with an underscore like `_loadPageData`
+
+  docs: https://lint.deno.land/rules/no-unused-vars
+
+
+error[no-unused-vars]: `formatBytes` is never used
+ --> /home/runner/work/mik-moni-demo/mik-moni-demo/static/js/utils.js:6:10
+  | 
+6 | function formatBytes(bytes, decimals = 2) {
+  |          ^^^^^^^^^^^
+  = hint: If this is intentional, prefix it with an underscore like `_formatBytes`
+
+  docs: https://lint.deno.land/rules/no-unused-vars
+
+
+error[no-unused-vars]: `formatSpeed` is never used
+  --> /home/runner/work/mik-moni-demo/mik-moni-demo/static/js/utils.js:19:10
+   | 
+19 | function formatSpeed(bytesPerSecond, decimals = 2) {
+   |          ^^^^^^^^^^^
+   = hint: If this is intentional, prefix it with an underscore like `_formatSpeed`
+
+  docs: https://lint.deno.land/rules/no-unused-vars
+
+
+error[no-unused-vars]: `formatUptime` is never used
+  --> /home/runner/work/mik-moni-demo/mik-moni-demo/static/js/utils.js:35:10
+   | 
+35 | function formatUptime(uptimeString) {
+   |          ^^^^^^^^^^^^
+   = hint: If this is intentional, prefix it with an underscore like `_formatUptime`
+
+  docs: https://lint.deno.land/rules/no-unused-vars
+
+
+error[no-unused-vars]: `formatDateTime` is never used
+  --> /home/runner/work/mik-moni-demo/mik-moni-demo/static/js/utils.js:67:10
+   | 
+67 | function formatDateTime(dateTimeString) {
+   |          ^^^^^^^^^^^^^^
+   = hint: If this is intentional, prefix it with an underscore like `_formatDateTime`
+
+  docs: https://lint.deno.land/rules/no-unused-vars
+
+
+error[no-unused-vars]: `formatMacAddress` is never used
+  --> /home/runner/work/mik-moni-demo/mik-moni-demo/static/js/utils.js:75:10
+   | 
+75 | function formatMacAddress(mac) {
+   |          ^^^^^^^^^^^^^^^^
+   = hint: If this is intentional, prefix it with an underscore like `_formatMacAddress`
+
+  docs: https://lint.deno.land/rules/no-unused-vars
+
+
+error[no-unused-vars]: `updateActiveDevice` is never used
+  --> /home/runner/work/mik-moni-demo/mik-moni-demo/static/js/utils.js:86:10
+   | 
+86 | function updateActiveDevice(deviceId) {
+   |          ^^^^^^^^^^^^^^^^^^
+   = hint: If this is intentional, prefix it with an underscore like `_updateActiveDevice`
+
+  docs: https://lint.deno.land/rules/no-unused-vars
+
+
+error[no-window]: window is deprecated and scheduled for removal in Deno 2.0
+  --> /home/runner/work/mik-moni-demo/mik-moni-demo/static/js/utils.js:94:25
+   | 
+94 |     const url = new URL(window.location);
+   |                         ^^^^^^
+   = hint: Instead, use `globalThis`
+
+  docs: https://lint.deno.land/rules/no-window
+
+
+error[no-unused-vars]: `refreshData` is never used
+   --> /home/runner/work/mik-moni-demo/mik-moni-demo/static/js/utils.js:141:10
+    | 
+141 | function refreshData(deviceId, callback) {
+    |          ^^^^^^^^^^^
+    = hint: If this is intentional, prefix it with an underscore like `_refreshData`
+
+  docs: https://lint.deno.land/rules/no-unused-vars
+
+
+error[no-unused-vars]: `createSpinner` is never used
+   --> /home/runner/work/mik-moni-demo/mik-moni-demo/static/js/utils.js:174:10
+    | 
+174 | function createSpinner() {
+    |          ^^^^^^^^^^^^^
+    = hint: If this is intentional, prefix it with an underscore like `_createSpinner`
+
+  docs: https://lint.deno.land/rules/no-unused-vars
+
+
+error[no-unused-vars]: `createErrorMessage` is never used
+   --> /home/runner/work/mik-moni-demo/mik-moni-demo/static/js/utils.js:186:10
+    | 
+186 | function createErrorMessage(message) {
+    |          ^^^^^^^^^^^^^^^^^^
+    = hint: If this is intentional, prefix it with an underscore like `_createErrorMessage`
+
+  docs: https://lint.deno.land/rules/no-unused-vars
+
+
+error[no-unused-vars]: `createEmptyState` is never used
+   --> /home/runner/work/mik-moni-demo/mik-moni-demo/static/js/utils.js:194:10
+    | 
+194 | function createEmptyState(message) {
+    |          ^^^^^^^^^^^^^^^^
+    = hint: If this is intentional, prefix it with an underscore like `_createEmptyState`
+
+  docs: https://lint.deno.land/rules/no-unused-vars
+
+
+error[no-unused-vars]: `cpuChart` is never used
+ --> /home/runner/work/mik-moni-demo/mik-moni-demo/static/js/dashboard.js:6:5
+  | 
+6 | let cpuChart = null;
+  |     ^^^^^^^^
+  = hint: If this is intentional, prefix it with an underscore like `_cpuChart`
+
+  docs: https://lint.deno.land/rules/no-unused-vars
+
+
+error[prefer-const]: `cpuChart` is never reassigned
+ --> /home/runner/work/mik-moni-demo/mik-moni-demo/static/js/dashboard.js:6:5
+  | 
+6 | let cpuChart = null;
+  |     ^^^^^^^^
+  = hint: Use `const` instead
+
+  docs: https://lint.deno.land/rules/prefer-const
+
+
+error[no-unused-vars]: `memoryChart` is never used
+ --> /home/runner/work/mik-moni-demo/mik-moni-demo/static/js/dashboard.js:7:5
+  | 
+7 | let memoryChart = null;
+  |     ^^^^^^^^^^^
+  = hint: If this is intentional, prefix it with an underscore like `_memoryChart`
+
+  docs: https://lint.deno.land/rules/no-unused-vars
+
+
+error[prefer-const]: `memoryChart` is never reassigned
+ --> /home/runner/work/mik-moni-demo/mik-moni-demo/static/js/dashboard.js:7:5
+  | 
+7 | let memoryChart = null;
+  |     ^^^^^^^^^^^
+  = hint: Use `const` instead
+
+  docs: https://lint.deno.land/rules/prefer-const
+
+
+error[no-unused-vars]: `diskChart` is never used
+ --> /home/runner/work/mik-moni-demo/mik-moni-demo/static/js/dashboard.js:8:5
+  | 
+8 | let diskChart = null;
+  |     ^^^^^^^^^
+  = hint: If this is intentional, prefix it with an underscore like `_diskChart`
+
+  docs: https://lint.deno.land/rules/no-unused-vars
+
+
+error[prefer-const]: `diskChart` is never reassigned
+ --> /home/runner/work/mik-moni-demo/mik-moni-demo/static/js/dashboard.js:8:5
+  | 
+8 | let diskChart = null;
+  |     ^^^^^^^^^
+  = hint: Use `const` instead
+
+  docs: https://lint.deno.land/rules/prefer-const
+
+
+error[no-unused-vars]: `trafficCharts` is never used
+ --> /home/runner/work/mik-moni-demo/mik-moni-demo/static/js/dashboard.js:9:5
+  | 
+9 | let trafficCharts = {};
+  |     ^^^^^^^^^^^^^
+  = hint: If this is intentional, prefix it with an underscore like `_trafficCharts`
+
+  docs: https://lint.deno.land/rules/no-unused-vars
+
+
+error[prefer-const]: `trafficCharts` is never reassigned
+ --> /home/runner/work/mik-moni-demo/mik-moni-demo/static/js/dashboard.js:9:5
+  | 
+9 | let trafficCharts = {};
+  |     ^^^^^^^^^^^^^
+  = hint: Use `const` instead
+
+  docs: https://lint.deno.land/rules/prefer-const
+
+
+error[no-window]: window is deprecated and scheduled for removal in Deno 2.0
+  --> /home/runner/work/mik-moni-demo/mik-moni-demo/static/js/dashboard.js:24:33
+   | 
+24 |             const url = new URL(window.location);
+   |                                 ^^^^^^
+   = hint: Instead, use `globalThis`
+
+  docs: https://lint.deno.land/rules/no-window
+
+
+error[no-unused-vars]: `createGaugeChart` is never used
+ --> /home/runner/work/mik-moni-demo/mik-moni-demo/static/js/charts.js:6:10
+  | 
+6 | function createGaugeChart(elementId, value, maxValue, label, options = {}) {
+  |          ^^^^^^^^^^^^^^^^
+  = hint: If this is intentional, prefix it with an underscore like `_createGaugeChart`
+
+  docs: https://lint.deno.land/rules/no-unused-vars
+
+
+error[no-unused-vars]: `top` is never used
+  --> /home/runner/work/mik-moni-demo/mik-moni-demo/static/js/charts.js:74:43
+   | 
+74 |                 const { ctx, chartArea: { top, bottom, left, right, width, height } } = chart;
+   |                                           ^^^
+   = hint: If this is intentional, prefix it with an underscore like `_top`
+
+  docs: https://lint.deno.land/rules/no-unused-vars
+
+
+error[no-unused-vars]: `left` is never used
+  --> /home/runner/work/mik-moni-demo/mik-moni-demo/static/js/charts.js:74:56
+   | 
+74 |                 const { ctx, chartArea: { top, bottom, left, right, width, height } } = chart;
+   |                                                        ^^^^
+   = hint: If this is intentional, prefix it with an underscore like `_left`
+
+  docs: https://lint.deno.land/rules/no-unused-vars
+
+
+error[no-unused-vars]: `right` is never used
+  --> /home/runner/work/mik-moni-demo/mik-moni-demo/static/js/charts.js:74:62
+   | 
+74 |                 const { ctx, chartArea: { top, bottom, left, right, width, height } } = chart;
+   |                                                              ^^^^^
+   = hint: If this is intentional, prefix it with an underscore like `_right`
+
+  docs: https://lint.deno.land/rules/no-unused-vars
+
+
+error[no-unused-vars]: `height` is never used
+  --> /home/runner/work/mik-moni-demo/mik-moni-demo/static/js/charts.js:74:76
+   | 
+74 |                 const { ctx, chartArea: { top, bottom, left, right, width, height } } = chart;
+   |                                                                            ^^^^^^
+   = hint: If this is intentional, prefix it with an underscore like `_height`
+
+  docs: https://lint.deno.land/rules/no-unused-vars
+
+
+error[no-unused-vars]: `createTimeSeriesChart` is never used
+   --> /home/runner/work/mik-moni-demo/mik-moni-demo/static/js/charts.js:107:10
+    | 
+107 | function createTimeSeriesChart(elementId, data, options = {}) {
+    |          ^^^^^^^^^^^^^^^^^^^^^
+    = hint: If this is intentional, prefix it with an underscore like `_createTimeSeriesChart`
+
+  docs: https://lint.deno.land/rules/no-unused-vars
+
+
+error[no-unused-vars]: `createBarChart` is never used
+   --> /home/runner/work/mik-moni-demo/mik-moni-demo/static/js/charts.js:241:10
+    | 
+241 | function createBarChart(elementId, data, options = {}) {
+    |          ^^^^^^^^^^^^^^
+    = hint: If this is intentional, prefix it with an underscore like `_createBarChart`
+
+  docs: https://lint.deno.land/rules/no-unused-vars
+
+
+error[no-unused-vars]: `createPieChart` is never used
+   --> /home/runner/work/mik-moni-demo/mik-moni-demo/static/js/charts.js:334:10
+    | 
+334 | function createPieChart(elementId, data, options = {}) {
+    |          ^^^^^^^^^^^^^^
+    = hint: If this is intentional, prefix it with an underscore like `_createPieChart`
+
+  docs: https://lint.deno.land/rules/no-unused-vars
+
+
+error[no-unused-vars]: `updateChart` is never used
+   --> /home/runner/work/mik-moni-demo/mik-moni-demo/static/js/charts.js:410:10
+    | 
+410 | function updateChart(chartInstance, newData, newLabels) {
+    |          ^^^^^^^^^^^
+    = hint: If this is intentional, prefix it with an underscore like `_updateChart`
+
+  docs: https://lint.deno.land/rules/no-unused-vars
+
+
+error[no-unused-vars]: `createTrafficChart` is never used
+   --> /home/runner/work/mik-moni-demo/mik-moni-demo/static/js/charts.js:435:10
+    | 
+435 | function createTrafficChart(elementId, data, options = {}) {
+    |          ^^^^^^^^^^^^^^^^^^
+    = hint: If this is intentional, prefix it with an underscore like `_createTrafficChart`
+
+  docs: https://lint.deno.land/rules/no-unused-vars
+
+
+error[prefer-const]: `totalCount` is never reassigned
+   --> /home/runner/work/mik-moni-demo/mik-moni-demo/static/js/alerts.js:259:9
+    | 
+259 |     let totalCount = alertIds.length;
+    |         ^^^^^^^^^^
+    = hint: Use `const` instead
+
+  docs: https://lint.deno.land/rules/prefer-const
+
+
+error[prefer-const]: `errorMessages` is never reassigned
+   --> /home/runner/work/mik-moni-demo/mik-moni-demo/static/js/alerts.js:260:9
+    | 
+260 |     let errorMessages = [];
+    |         ^^^^^^^^^^^^^
+    = hint: Use `const` instead
+
+  docs: https://lint.deno.land/rules/prefer-const
+
+
+error[no-unused-vars]: `loadPageData` is never used
+   --> /home/runner/work/mik-moni-demo/mik-moni-demo/static/js/alerts.js:402:10
+    | 
+402 | function loadPageData(deviceId) {
+    |          ^^^^^^^^^^^^
+    = hint: If this is intentional, prefix it with an underscore like `_loadPageData`
+
+  docs: https://lint.deno.land/rules/no-unused-vars
+
+
+error[prefer-const]: `chartTopics` is never reassigned
+   --> /home/runner/work/mik-moni-demo/mik-moni-demo/static/js/logs.js:277:9
+    | 
+277 |     let chartTopics = topics.slice(0, 8);
+    |         ^^^^^^^^^^^
+    = hint: Use `const` instead
+
+  docs: https://lint.deno.land/rules/prefer-const
+
+
+error[prefer-const]: `chartData` is never reassigned
+   --> /home/runner/work/mik-moni-demo/mik-moni-demo/static/js/logs.js:278:9
+    | 
+278 |     let chartData = chartTopics.map(topic => topicCounts[topic]);
+    |         ^^^^^^^^^
+    = hint: Use `const` instead
+
+  docs: https://lint.deno.land/rules/prefer-const
+
+
+error[no-unused-vars]: `loadPageData` is never used
+   --> /home/runner/work/mik-moni-demo/mik-moni-demo/static/js/logs.js:402:10
+    | 
+402 | function loadPageData(deviceId) {
+    |          ^^^^^^^^^^^^
+    = hint: If this is intentional, prefix it with an underscore like `_loadPageData`
+
+  docs: https://lint.deno.land/rules/no-unused-vars
+
+
+error[no-unused-vars]: `loadPageData` is never used
+   --> /home/runner/work/mik-moni-demo/mik-moni-demo/static/js/services.js:824:10
+    | 
+824 | function loadPageData(deviceId) {
+    |          ^^^^^^^^^^^^
+    = hint: If this is intentional, prefix it with an underscore like `_loadPageData`
+
+  docs: https://lint.deno.land/rules/no-unused-vars
+
+
+Found 39 problems (2 fixable via --fix)
+Checked 9 files
+Error: Process completed with exit code 1.
